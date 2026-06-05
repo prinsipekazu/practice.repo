@@ -2,389 +2,678 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PHP Interactive Reviewer (with Dropdowns)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>PHP Sequential Interactive Reviewer</title>
     <style>
+        :root {
+            --primary-color: #4A148C;
+            --accent-color: #7B1FA2;
+            --bg-color: #f4f7f6;
+            --card-bg: #ffffff;
+            --text-color: #333333;
+            --border-color: #cccccc;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f4f7f6;
-            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #eae6f7;
+            color: var(--text-color);
             line-height: 1.6;
             margin: 0;
-            padding: 20px;
+            padding: 12px;
         }
+
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: #fff;
-            padding: 30px;
-            border-radius: 8px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 900px;
+            margin: 30px auto;
+            background: var(--card-bg);
+            padding: 24px;
+            border-radius: 16px;
+            border: 1px solid rgba(74, 20, 140, 0.12);
+            box-shadow: 0 18px 45px rgba(0,0,0,0.08);
         }
+
         h1 {
             text-align: center;
-            color: #4A148C;
-            border-bottom: 2px solid #7B1FA2;
+            color: var(--primary-color);
+            border-bottom: 2px solid rgba(123, 31, 162, 0.25);
             padding-bottom: 10px;
+            font-size: 1.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            margin-top: 0;
+            margin-bottom: 18px;
         }
-        .quiz-info {
-            text-align: center;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #666;
+
+        .quiz-navigation-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            gap: 10px;
+            background: #faf7ff;
+            border: 1px solid rgba(74, 20, 140, 0.12);
+            border-radius: 12px;
+            padding: 14px 16px;
         }
-        .question-card {
-            background: #fafafa;
-            border: 1px solid #e0e0e0;
+
+        .nav-select {
+            padding: 8px;
+            font-size: 0.9rem;
             border-radius: 6px;
-            padding: 20px;
-            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+            flex-grow: 1;
+            height: 40px;
+            background-color: #fff;
         }
+
+        .question-card {
+            background: #ffffff;
+            border: 1px solid rgba(74, 20, 140, 0.14);
+            border-radius: 14px;
+            padding: 22px;
+            margin-bottom: 18px;
+            min-height: 260px;
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,0.8);
+        }
+
         .question-text {
-            font-weight: 600;
-            font-size: 1.1em;
+            font-weight: 700;
+            font-size: 1.12rem;
             margin-bottom: 15px;
             white-space: pre-wrap;
+            word-break: break-word;
         }
+
         .options-container {
             display: flex;
             flex-direction: column;
             gap: 10px;
         }
+
         .option-label {
-            display: block;
-            padding: 10px 15px;
-            background: #fff;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: background 0.2s ease;
+            font-size: 0.95rem;
+            min-height: 48px;
         }
+
         .option-label:hover {
             background: #f0f0f0;
         }
-        .option-label input {
-            margin-right: 10px;
+
+        .option-label input[type="radio"] {
+            margin-right: 12px;
+            width: 22px;
+            height: 22px;
+            flex-shrink: 0;
         }
+
         .text-input-container {
-            margin-top: 10px;
+            margin-top: 8px;
         }
+
         .text-answer-field {
             width: 100%;
-            padding: 10px;
-            font-size: 1em;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            padding: 12px;
+            font-size: 1rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
             box-sizing: border-box;
+            background-color: #fff;
+            height: 48px;
         }
+
         .dropdown-matching-container {
-            margin-top: 15px;
+            margin-top: 12px;
             display: flex;
             flex-direction: column;
             gap: 12px;
-            background: #f0f0f0;
-            padding: 15px;
+            background: #ededed;
+            padding: 12px;
             border-radius: 6px;
         }
+
         .dropdown-row {
             display: flex;
+            flex-direction: column;
+            gap: 6px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #ccc;
+        }
+        
+        .dropdown-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .ordering-container {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-top: 12px;
+        }
+
+        .ordering-item {
+            background: #ffffff;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            padding: 12px 15px;
+            cursor: move;
+            user-select: none;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            display: flex;
             align-items: center;
-            justify-content: space-between;
             gap: 10px;
         }
+
+        .ordering-item::before {
+            content: '⋮⋮';
+            color: #999;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        .ordering-item:hover {
+            border-color: var(--accent-color);
+            background: #f9f9f9;
+            box-shadow: 0 2px 8px rgba(123, 31, 162, 0.1);
+        }
+
+        .ordering-item.dragging {
+            opacity: 0.5;
+            border-color: var(--accent-color);
+        }
+
+        .ordering-item.drag-over {
+            border-color: var(--primary-color);
+            border-style: dashed;
+            background: #f0f0f0;
+        }
+
+
         .dropdown-label {
             font-weight: bold;
-            flex: 1;
+            font-size: 0.95rem;
+            word-break: break-word;
         }
+
         .quiz-select {
-            padding: 8px 12px;
-            font-size: 0.95em;
-            border: 1px solid #ccc;
-            border-radius: 4px;
+            width: 100%;
+            padding: 10px;
+            font-size: 0.95rem;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
             background-color: #fff;
-            flex: 1;
-            max-width: 350px;
+            height: 44px;
         }
-        .check-btn {
-            background-color: #7B1FA2;
+
+        .action-button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .quiz-btn {
             color: white;
             border: none;
-            padding: 10px 20px;
-            font-size: 1em;
-            border-radius: 4px;
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
             cursor: pointer;
-            margin-top: 15px;
             transition: background 0.2s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
+
+        .check-btn {
+            background-color: var(--accent-color);
+        }
+
         .check-btn:hover {
-            background-color: #4A148C;
+            background-color: var(--primary-color);
         }
+
+        .submit-btn {
+            background-color: #3A0CA3;
+            color: white;
+        }
+
+        .submit-btn:hover {
+            background-color: #2E0786;
+        }
+
+        .toggle-summary-btn {
+            background: none;
+            border: 1px solid var(--primary-color);
+            color: var(--primary-color);
+            border-radius: 6px;
+            padding: 8px 14px;
+            cursor: pointer;
+            font-weight: 700;
+            margin-top: 8px;
+        }
+
+        .toggle-summary-btn:hover {
+            background: rgba(122, 92, 172, 0.08);
+        }
+
+        .nav-btn {
+            background-color: #555555;
+        }
+
+        .results-panel {
+            margin-top: 14px;
+            text-align: left;
+            background: #ffffff;
+            border: 1px solid rgba(74, 20, 140, 0.15);
+            border-radius: 10px;
+            padding: 14px 16px;
+            box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+        }
+
+        .results-panel .panel-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .summary-details {
+            max-height: 340px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
+        .summary-details ol {
+            margin: 0;
+            padding-left: 20px;
+        }
+
+        .review-link {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            text-decoration: underline;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 0;
+            margin: 0;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .review-link:hover {
+            color: var(--accent-color);
+        }
+
+        .nav-btn:hover {
+            background-color: #333333;
+        }
+
+        .nav-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .nav-button-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+
         .feedback {
             margin-top: 15px;
             padding: 12px;
-            border-radius: 4px;
+            border-radius: 6px;
             font-weight: bold;
             display: none;
             white-space: pre-wrap;
+            font-size: 0.95rem;
+            word-break: break-word;
         }
+
         .correct {
             background-color: #d4edda;
             color: #155724;
             border: 1px solid #c3e6cb;
         }
+
         .incorrect {
             background-color: #f8d7da;
             color: #721c24;
             border: 1px solid #f5c6cb;
         }
+
         .score-summary {
             text-align: center;
-            font-size: 1.3em;
+            font-size: 1rem;
             font-weight: bold;
-            margin-top: 30px;
-            padding: 20px;
+            margin-top: 20px;
+            padding: 12px;
             background: #E1BEE7;
             border-radius: 6px;
-            color: #4A148C;
-            position: sticky;
-            bottom: 10px;
+            color: var(--primary-color);
+            bottom: 0;
             box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+            z-index: 100;
+        }
+
+        .review-link {
+            background: none;
+            border: none;
+            color: var(--primary-color);
+            text-decoration: underline;
+            cursor: pointer;
+            font-weight: bold;
+            padding: 0;
+            margin: 0;
+            font-size: 1rem;
+            font-family: inherit;
+        }
+
+        .review-link:hover {
+            color: var(--accent-color);
+        }
+        
+
+        @media (min-width: 600px) {
+            body { padding: 20px; }
+            .container { padding: 25px; }
+            h1 { font-size: 1.8rem; }
+            .dropdown-row {
+                flex-direction: row;
+                align-items: center;
+                justify-content: space-between;
+                gap: 15px;
+                border-bottom: none;
+                padding-bottom: 0;
+            }
+            .quiz-select { max-width: 450px; }
+            .action-button-group { flex-direction: row; }
+            .check-btn { order: 2; flex: 2; }
+            .nav-button-row { order: 1; flex: 3; }
+            .score-summary { font-size: 1.1rem; }
         }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1>PHP Interactive Reviewer</h1>
-    <div class="quiz-info">Total Questions: 100 (Questions Randomized, Options Fixed Sequence)</div>
-    <div id="quiz-wrapper"></div>
+    <h1>PHP Sequential Interactive Reviewer</h1>
+    
+    <div class="quiz-navigation-top">
+        <label for="question-jump" style="font-weight: bold; font-size: 0.9rem;">Go To:</label>
+        <select id="question-jump" class="nav-select" onchange="jumpToQuestion(this.value)"></select>
+    </div>
+
+    <div id="quiz-container"></div>
+
+    <div class="action-button-group">
+        <button class="quiz-btn check-btn" id="check-action-btn" onclick="triggerVerification()">Check Answer</button>
+    <button class="quiz-btn submit-btn" id="submit-action-btn" onclick="submitQuiz()">Submit</button>
+        <div class="nav-button-row">
+            <button class="quiz-btn nav-btn" id="prev-action-btn" onclick="navigateQuestion(-1)">← Prev</button>
+            <button class="quiz-btn nav-btn" id="restart-action-btn" onclick="restartQuiz()">Restart</button>
+            <button class="quiz-btn nav-btn" id="next-action-btn" onclick="navigateQuestion(1)">Next →</button>
+        </div>
+    </div>
+
     <div class="score-summary" id="score-box">
-        Evaluated Questions: <span id="evaluated-count">0</span>/100
+        Evaluated Questions: <span id="evaluated-count">0</span>/<span id="total-questions">100</span>
+        <div class="results-panel" id="results-panel" style="display:none;">
+            <div class="panel-header">
+                <div>
+                    <div id="final-score" style="font-weight: 700; font-size: 1.05rem;"></div>
+                    <div id="wrong-summary-title" style="margin-top: 6px; color: #4a148c; font-weight: 700; display:none;">Incorrect questions and correct answers:</div>
+                </div>
+                <button class="toggle-summary-btn" id="toggle-summary-btn" onclick="toggleSummary()">Hide report</button>
+            </div>
+            <div id="summary-details" class="summary-details"></div>
+        </div>
     </div>
 </div>
 
 <script>
-const quizData = [
+  const quizData = [
   {
     id: 1,
     type: "choice",
     question: "1.) A programmer accidentally created an infinite loop. Which issue MOST likely caused it?",
-    options: ["Too many variables", "The condition has arithmetic operators", "Loop condition never becomes false", "Missing HTML tags"],
-    answerText: "Loop condition never becomes false"
+    options: ["A. Too many variables", "B. The condition has arithmetic operators", "C. Loop condition never becomes false", "D. Missing HTML tags"],
+    answerText: "C. Loop condition never becomes false"
   },
   {
     id: 2,
     type: "text",
-    question: "2.) Complete the nested function call so that it will display Inside.\n\nfunction outer(){\n  function inner(){\n  }\n  echo \"Inside\";\n}\nouter();",
+    question: "2.) Complete the nested function call so that it will display Inside.\n\nfunction outer(){\n  function inner(){\n  }\n  echo \"Inside\";\n  _____\n}\nouter();",
     answer: "inner();"
   },
   {
     id: 3,
     type: "choice",
-    question: "3.) Analyze the code:\nfor ($i=1; $i<=3; $i++){\n}\necho $i;\n\nWhat is the output?",
-    options: ["012", "0123", "12", "123"],
-    answerText: "123"
+    question: "3.) Analyze the code:\n\nfor ($i=1; $i<=3; $i++){\n  echo $i;\n}\n\nWhat is the output?",
+    options: ["A. 012", "B. 0123", "C. 12", "D. 123"],
+    answerText: "D. 123"
   },
   {
     id: 4,
     type: "choice",
-    question: "4.) What is the output?\necho \"5\"+\"5 students\";",
-    options: ["10", "55 students", "5", "Error"],
-    answerText: "10"
+    question: "4.) What is the output?\n\necho \"5\" + \"5 students\";",
+    options: ["A. 10", "B. 55 students", "C. 5", "D. Error"],
+    answerText: "A. 10"
   },
   {
     id: 5,
     type: "choice",
     question: "5.) A grading system must store Student Name, Subject, and Grade for hundreds of students. Which structure is MOST appropriate?",
-    options: ["Multiple arrays", "A single multi-dimensional array", "Multiple single-dimensional array", "Multiple variables"],
-    answerText: "A single multi-dimensional array"
+    options: ["A. Multiple arrays", "B. A single multi-dimensional array", "C. Multiple single-dimensional array", "D. Multiple variables"],
+    answerText: "B. A single multi-dimensional array"
   },
   {
     id: 6,
     type: "text",
-    question: "6.) Complete the function declaration:\n_____ greet(){\n  echo \"Hello\";\n}",
+    question: "6.) Complete the function declaration:\n\n_____ greet(){\n  echo \"Hello\";\n}",
     answer: "function"
   },
   {
     id: 7,
     type: "choice",
     question: "7.) Which software package is MOST suitable for beginners setting up PHP locally?",
-    options: ["XAMPP", "Visual Studio Code", "Composer", "Git"],
-    answerText: "XAMPP"
+    options: ["A. XAMPP", "B. Visual Studio Code", "C. Composer", "D. Git"],
+    answerText: "A. XAMPP"
   },
   {
     id: 8,
     type: "text",
-    question: "8.) Complete the function declaration.\n_____ displayMessage(){\n  echo \"Welcome\";\n}",
+    question: "8.) Complete the function declaration.\n\n_____ displayMessage(){\n  echo \"Welcome\";\n}",
     answer: "function"
   },
   {
     id: 9,
     type: "choice",
-    question: "9.) What will be the output?\n$x = 5;\nif($x > 3){\n  if($x < 10){\n    echo \"A\";\n  }else{\n    echo \"B\";\n  }\n}",
-    options: ["No output", "A", "AB", "B"],
-    answerText: "A"
+    question: "9.) What will be the output?\n\n$x = 5;\nif ($x > 3){\n  if ($x < 10){\n    echo \"A\";\n  } else {\n    echo \"B\";\n  }\n}",
+    options: ["A. No output", "B. A", "C. AB", "D. B"],
+    answerText: "B. A"
   },
   {
     id: 10,
     type: "choice",
-    question: "10.) What is the problem in this code?\n1  $x = 5;\n2  \n3  function test(){\n4    echo $x;\n5  }\n6  test();",
-    options: ["Missing echo in line 6", "Undefined variable inside function", "Missing return statement", "No problem"],
-    answerText: "Undefined variable inside function"
+    question: "10.) What is the problem in this code?\n\nLine 1: $x = 5;\nLine 2:\nLine 3: function test(){\nLine 4:   echo $x;\nLine 5: }\nLine 6: test();",
+    options: ["A. Missing echo in line 6", "B. Undefined variable inside function", "C. Missing return statement", "D. No problem"],
+    answerText: "B. Undefined variable inside function"
   },
   {
     id: 11,
     type: "choice",
-    question: "11.) What will be the output?\n$x = 0;\nif($x = 1){\n  echo \"YES\";\n}else{\n  echo \"NO\";\n}",
-    options: ["NO", "YES", "Unknown", "Error"],
-    answerText: "YES"
+    question: "11.) What will be the output?\n\n$x = 0;\nif ($x = 1){\n  echo \"YES\";\n} else {\n  echo \"NO\";\n}",
+    options: ["A. NO", "B. YES", "C. Unknown", "D. Error"],
+    answerText: "B. YES"
   },
   {
     id: 12,
     type: "choice",
-    question: "12.) Given:\n$x = 5 + 3 * 2\nWhat is the value of $x?",
-    options: ["13", "16", "10", "11"],
-    answerText: "11"
+    question: "12.) Given:\n\n$x = 5 + 3 * 2;\n\nWhat is the value of $x?",
+    options: ["A. 13", "B. 16", "C. 10", "D. 11"],
+    answerText: "D. 11"
   },
   {
     id: 13,
     type: "choice",
-    question: "13.) Analyze the code:\n$numbers = array(10,20,30);\necho count($numbers);\nWhat is the output?",
-    options: ["Error", "No output", "2", "3"],
-    answerText: "3"
+    question: "13.) Analyze the code:\n\n$numbers = array(10,20,30);\necho count($numbers);\n\nWhat is the output?",
+    options: ["A. Error", "B. No output", "C. 2", "D. 3"],
+    answerText: "D. 3"
   },
   {
     id: 14,
     type: "choice",
-    question: "14.) What is wrong with this code?\nif($x = 5){\n}\necho \"True\";",
-    options: ["No problem in the code", "Condition will always be true", "Undefined variable", "Syntax error"],
-    answerText: "Condition will always be true"
+    question: "14.) What is wrong with this code?\n\nif ($x = 5){\necho \"True\"};",
+    options: ["A. No problem in the code", "B. Condition will always be true", "C. Undefined variable", "D. Syntax error"],
+    answerText: "B. Condition will always be true"
   },
   {
     id: 15,
     type: "choice",
     question: "15.) A developer wants a webpage to automatically generate customized greetings for each user visiting the site. Which feature of PHP is MOST useful?",
-    options: ["CSS animation", "Browser caching", "Static HTML rendering", "Server-side scripting"],
-    answerText: "Server-side scripting"
+    options: ["A. CSS animation", "B. Browser caching", "C. Static HTML rendering", "D. Server-side scripting"],
+    answerText: "D. Server-side scripting"
   },
   {
     id: 16,
     type: "choice",
     question: "16.) In PHP, the return datatype of a function MUST be specified when declaring an function.",
-    options: ["True", "False"],
-    answerText: "False"
+    options: ["A. True", "B. False"],
+    answerText: "B. False"
   },
   {
     id: 17,
     type: "choice",
     question: "17.) Which scenario BEST demonstrates dynamic web content?",
-    options: ["Fixed image gallery", "Offline text editor", "A printed brochure", "A webpage displaying current weather data from a database"],
-    answerText: "A webpage displaying current weather data from a database"
+    options: ["A. Fixed image gallery", "B. Offline text editor", "C. A printed brochure", "D. A webpage displaying current weather data from a database"],
+    answerText: "D. A webpage displaying current weather data from a database"
   },
   {
     id: 18,
     type: "choice",
     question: "18.) PHP is embedded directly within HTML and CANNOT be placed in a separate file.",
-    options: ["True", "False"],
-    answerText: "False"
+    options: ["A. True", "B. False"],
+    answerText: "B. False"
   },
   {
     id: 19,
     type: "choice",
     question: "19.) goto helps programs to be more organized and easier to maintain in the long run.",
-    options: ["True", "False"],
-    answerText: "False"
+    options: ["A. True", "B. False"],
+    answerText: "B. False"
   },
   {
     id: 20,
     type: "text",
-    question: "20.) Complete the loop so that it will execute 5 times:\nfor($i=1; _____; _____)",
+    question: "20.) Complete the loop so that it will execute 5 times:\n\nfor ($i = 1; _____; _____)",
     answer: "$i<=5; $i++"
   },
   {
     id: 21,
     type: "choice",
-    question: "21.) What is the output?\n$a = \"10\";\n$b = \"2a\";\necho $a + $b;",
-    options: ["10", "Error", "12", "102a"],
-    answerText: "12"
+    question: "21.) What is the output?\n\n$a = \"10\";\n$b = \"2a\";\necho $a + $b;",
+    options: ["A. 10", "B. Error", "C. 12", "D. 102a"],
+    answerText: "C. 12"
   },
   {
     id: 22,
     type: "choice",
-    question: "22.) Which of the choices correctly reflects the output of the statement?\necho date(\"m d,Y h:i:A\");",
-    options: ["06 19, 2026 08:05:57 PM", "6 19, 2026 8:5:57 PM", "Error", "Jun 19, 2026 08:05:57 PM"],
-    answerText: "06 19, 2026 08:05:57 PM"
+    question: "22.) Which of the choices correctly reflects the output of the statement?\n\necho date(\"m d,Y h:i:A\");",
+    options: ["A. 06 19, 2026 08:05:57 PM", "B. 6 19, 2026 8:5:57 PM", "C. Error", "D. Jun 19, 2026 08:05:57 PM"],
+    answerText: "A. 06 19, 2026 08:05:57 PM"
   },
   {
     id: 23,
     type: "text",
-    question: "23.) Complete the statement so that it will return the remainder of the two parameters.\nfunction multiply($a,$b){\n  _____\n}",
-    answer: "return $a % $b"
+    question: "23.) Complete the statement so that it will return the remainder of the two parameters.\n\nfunction multiply($a, $b){\n  _____\n}",
+    answer: "return $a % $b;"
   },
   {
     id: 24,
     type: "choice",
     question: "24.) Which data type is MOST appropriate for storing a student's GPA?",
-    options: ["Integer", "Boolean", "Array", "Float"],
-    answerText: "Float"
+    options: ["A. Integer", "B. Boolean", "C. Array", "D. Float"],
+    answerText: "D. Float"
   },
   {
     id: 25,
     type: "text",
-    question: "25.) Fill in the missing operator:\n$x _____ 5;\nto increase $x by 5.",
+    question: "25.) Fill in the missing operator to increase $x by 5:\n\n$x _____ 5;",
     answer: "+="
   },
   {
     id: 26,
     type: "choice",
-    question: "26.) Analyze the code:\n$i = 1;\nwhile($i <= 3){\n  echo $i;\n}\nWhat is the output?",
-    options: ["12", "123", "Infinite loop", "012"],
-    answerText: "Infinite loop"
+    question: "26.) Analyze the code:\n\n$i = 1;\nwhile ($i <= 3){\n  echo $i;\n}\n\nWhat is the output?",
+    options: ["A. 12", "B. 123", "C. Infinite loop", "D. 012"],
+    answerText: "C. Infinite loop"
   },
   {
     id: 27,
     type: "choice",
-    question: "27.) Analyze the code:\nfunction add($a,$b){\n  return $a + $b;\n}\necho add(\"5\",\"3\");\nWhat is the output?",
-    options: ["Error", "8", "53", "Unknown"],
-    answerText: "8"
+    question: "27.) Analyze the code:\n\nfunction add($a, $b){\n  return $a + $b;\n}\necho add(\"5\",\"3\");\n\nWhat is the output?",
+    options: ["A. Error", "B. 8", "C. 53", "D. Unknown"],
+    answerText: "B. 8"
   },
   {
     id: 28,
     type: "choice",
     question: "28.) A developer accidentally declared both $Score and $score and the program did not show the output as expected. Why did the program produce unexpected results?",
-    options: ["PHP ignores capitalization", "PHP variables are case-sensitive", "Variables are automatically merged", "PHP converts all variables to lowercase"],
-    answerText: "PHP variables are case-sensitive"
+    options: ["A. PHP ignores capitalization", "B. PHP variables are case-sensitive", "C. Variables are automatically merged", "D. PHP converts all variables to lowercase"],
+    answerText: "B. PHP variables are case-sensitive"
   },
   {
     id: 29,
     type: "text",
-    question: "29.) Complete the statement so that it will return the remainder of the two parameters.\nfunction multiply($a,$b){\n  _____\n}",
-    answer: "return $a % $b"
+    question: "29.) Complete the statement so that it will return the remainder of the two parameters.\n\nfunction multiply($a, $b){\n  _____\n}",
+    answer: "return $a % $b;"
   },
   {
     id: 30,
     type: "text",
-    question: "30.) Complete the logical operator:\nif($x > 0 _____ $y > 0)\nBoth conditions must be true.",
+    question: "30.) Complete the logical operator where both conditions must be true:\n\nif ($x > 0 _____ $y > 0)",
     answer: "&&"
   },
   {
     id: 31,
     type: "choice",
     question: "31.) A student placed a PHP file on the desktop and attempted to run it directly in the browser. The PHP code appeared as plain text. What is the BEST explanation?",
-    options: ["PHP requires JavaScript to run", "The browser does not support HTML", "PHP scripts require a web server environment and must be placed in a server-specific directory", "The file must be compressed first"],
-    answerText: "PHP scripts require a web server environment and must be placed in a server-specific directory"
+    options: ["A. PHP requires JavaScript to run", "B. The browser does not support HTML", "C. PHP scripts require a web server environment and must be placed in a server-specific directory", "D. The file must be compressed first"],
+    answerText: "C. PHP scripts require a web server environment and must be placed in a server-specific directory"
   },
   {
     id: 32,
     type: "choice",
-    question: "32.) What is wrong with this code?\nfunction calc($a, $b){\n  $a + $b;\n}\necho calc(2,3);",
-    options: ["Missing echo statement inside the function", "Missing return statement", "Parameters are declared wrong", "Wrong arguments"],
-    answerText: "Missing return statement"
+    question: "32.) What is wrong with this code?\n\nfunction calc($a, $b){\n  $a + $b;\n}\necho calc(2,3);",
+    options: ["A. Missing echo statement inside the function", "B. Missing return statement", "C. Parameters are declared wrong", "D. Wrong arguments"],
+    answerText: "B. Missing return statement"
   },
   {
     id: 33,
     type: "text",
-    question: "33.) Complete the code so that 'Access Granted' will be displayed if both the conditions are true.\nif($username == \"admin\" _____ $password == \"1234\"){\n  echo \"Access Granted\";\n}",
+    question: "33.) Complete the code so that 'Access Granted' will be displayed if both conditions are true:\n\nif ($username == \"admin\" _____ $password == \"1234\"){\n  echo \"Access Granted\";\n}",
     answer: "&&"
   },
   {
@@ -401,247 +690,267 @@ const quizData = [
   {
     id: 35,
     type: "text",
-    question: "35.) Complete the function declaration.\n_____ displayMessage(){\n  echo \"Welcome\";\n}",
+    question: "35.) Complete the function declaration:\n\n_____ displayMessage(){\n  echo \"Welcome\";\n}",
     answer: "function"
   },
   {
     id: 36,
     type: "choice",
-    question: "36.) Analyze the code:\nfunction add($a,$b){\n  return \"$a\" + \"$b\";\n}\necho add(5,3);\nWhat is the output?",
-    options: ["8", "Unknown", "Error", "53"],
-    answerText: "8"
+    question: "36.) Analyze the code:\n\nfunction add($a, $b){\n  return $a + $b;\n}\necho add(5, 3);\n\nWhat is the output?",
+    options: ["A. 8", "B. Unknown", "C. Error", "D. 53"],
+    answerText: "A. 8"
   },
   {
     id: 37,
     type: "choice",
     question: "37.) A grading system must store Student Name, Subject, and Grade for hundreds of students. Which structure is MOST appropriate?",
-    options: ["Multiple variables", "Multiple arrays", "Multiple single-dimensional array", "A single multi-dimensional array"],
-    answerText: "A single multi-dimensional array"
+    options: ["A. Multiple variables", "B. Multiple arrays", "C. Multiple single-dimensional array", "D. A single multi-dimensional array"],
+    answerText: "D. A single multi-dimensional array"
   },
   {
     id: 38,
     type: "choice",
-    question: "38.) Analyze the code:\n$grades = array(\n  array(\"Ana\",90),\n  array(\"Ben\",85)\n);\necho $grades[1][0];\nWhat is displayed?",
-    options: ["Ben 90", "Ben"],
-    answerText: "Ben"
+    question: "38.) Analyze the code:\n\n$grades = array(\n  array(\"Ana\",90),\n  array(\"Ben\",85)\n);\necho $grades[1][0];\n\nWhat is displayed?",
+    options: ["A. Ben 90", "B. Ben"],
+    answerText: "B. Ben"
   },
   {
     id: 39,
     type: "text",
-    question: "39.) Complete the statement:\necho _____(\"hello\");\nConvert \"hello\" to uppercase.",
+    question: "39.) Complete the statement to convert \"hello\" to uppercase:\n\necho _____(\"hello\");",
     answer: "strtoupper"
   },
   {
     id: 40,
     type: "choice",
     question: "40.) Why are variables important in programming?",
-    options: ["They replace servers", "They remove HTML", "They prevent loops", "They store reusable data values"],
-    answerText: "They store reusable data values"
+    options: ["A. They replace servers", "B. They remove HTML", "C. They prevent loops", "D. They store reusable data values"],
+    answerText: "D. They store reusable data values"
   },
   {
     id: 41,
     type: "choice",
     question: "41.) A webpage updates product prices automatically from a database every hour. Which concept is MOST related?",
-    options: ["Static rendering", "File compression", "Browser plugins", "Dynamic scripting"],
-    answerText: "Dynamic scripting"
+    options: ["A. Static rendering", "B. File compression", "C. Browser plugins", "D. Dynamic scripting"],
+    answerText: "D. Dynamic scripting"
   },
   {
     id: 42,
     type: "text",
-    question: "42.) $x = 2;\n$y = 3;\n$z = 4;\necho $x + $y * $z - $y;\nWhat is the output?",
+    question: "42.) Evaluate the arithmetic expression:\n\n$x = 2;\n$y = 3;\n$z = 4;\necho $x + $y * $z - $y;\n\nWhat is the output?",
     answer: "11"
   },
   {
     id: 43,
     type: "text",
-    question: "43.) Complete the PHP code:\n<?php\necho \"Welcome to PHP\";\n_____",
+    question: "43.) Complete the PHP code closing tag:\n\n<?php\n  echo \"Welcome to PHP\";\n_____",
     answer: "?>"
   },
   {
     id: 44,
     type: "text",
-    question: "44.) Complete the loop so that it will execute 5 times:\nfor($i=1; _____; _____)",
+    question: "44.) Complete the loop so that it will execute 5 times:\n\nfor ($i = 1; _____; _____)",
     answer: "$i<=5; $i++"
   },
   {
     id: 45,
     type: "choice",
     question: "45.) Multiplication has higher precedence than addition, but lower than division.",
-    options: ["True", "False"],
-    answerText: "False"
+    options: ["A. True", "B. False"],
+    answerText: "B. False"
   },
   {
     id: 46,
     type: "text",
-    question: "46.) Complete the function declaration.\n_____ displayMessage(){\n  echo \"Welcome\";\n}",
+    question: "46.) Complete the function declaration.\n\n_____ displayMessage(){\n  echo \"Welcome\";\n}",
     answer: "function"
   },
   {
     id: 47,
     type: "choice",
     question: "47.) Which loop is MOST appropriate when the number of repetitions is known beforehand?",
-    options: ["do..while", "for", "foreach", "while"],
-    answerText: "for"
+    options: ["A. do..while", "B. for", "C. foreach", "D. while"],
+    answerText: "B. for"
   },
   {
     id: 48,
     type: "choice",
-    question: "48.) PHP files commonly use the .php extension.",
-    options: ["True", "False"],
-    answerText: "True"
+    question: "48.) PHP files commonly use the.php extension.",
+    options: ["A. True", "B. False"],
+    answerText: "A. True"
   },
   {
     id: 49,
-    type: "text",
-    question: "49.) Arrange the correct flow of web architecture.\nResponse is generated in HTML form\nBrowser sends request\nServer processes PHP\nBrowser receives response\n\nType chronologically line-by-line using index digits:",
-    answer: "1. Browser sends request\n2. Server processes PHP\n3. Response is generated in HTML form\n4. Browser receives response"
+    type: "ordering",
+    question: "49.) Arrange the correct flow of web architecture.",
+    items: [
+      "Browser sends request",
+      "Server processes PHP",
+      "Response is generated in HTML form",
+      "Browser receives response"
+    ],
+    correctOrder: [
+      "Browser sends request",
+      "Server processes PHP",
+      "Response is generated in HTML form",
+      "Browser receives response"
+    ]
   },
   {
     id: 50,
     type: "choice",
     question: "50.) include_once() allows duplicate file inclusion.",
-    options: ["True", "False"],
-    answerText: "False"
+    options: ["A. True", "B. False"],
+    answerText: "B. False"
   },
   {
     id: 51,
     type: "text",
-    question: "51.) Complete the constant declaration:\n_____(\"SITE\", \"My Website\");",
+    question: "51.) Complete the constant declaration:\n\n_____(\"SITE\", \"My Website\");",
     answer: "define"
   },
   {
     id: 52,
     type: "choice",
     question: "52.) Why is PHP commonly paired with MySQL?",
-    options: ["PHP cannot display HTML", "MySQL compiles PHP code", "MySQL replaces Apache", "PHP is optimized for database interaction"],
-    answerText: "PHP is optimized for database interaction"
+    options: ["A. PHP cannot display HTML", "B. MySQL compiles PHP code", "C. MySQL replaces Apache", "D. PHP is optimized for database interaction"],
+    answerText: "D. PHP is optimized for database interaction"
   },
   {
     id: 53,
-    type: "text",
-    question: "53.) Arrange the steps in evaluating this expression:\n$x > 5 && $y < 10\n\nType chronologically line-by-line:",
-    answer: "1. Compare $x>5\n2. Compare $y<10\n3. Apply logical AND"
+    type: "ordering",
+    question: "53.) Arrange the steps in evaluating this expression: $x > 5 && $y < 10",
+    items: [
+      "Compare $x>5",
+      "Compare $y<10",
+      "Apply logical AND"
+    ],
+    correctOrder: [
+      "Compare $x>5",
+      "Compare $y<10",
+      "Apply logical AND"
+    ]
   },
   {
     id: 54,
     type: "choice",
-    question: "54.) What is the issue with this code?\nfor($i=1; $i>0; $i++){\n  echo $i;\n}",
-    options: ["Infinite loop", "Nothing", "Syntax error", "Undefined variable"],
-    answerText: "Infinite loop"
+    question: "54.) What is the issue with this code?\n\nfor($i=1; $i>0; $i++){\n  echo $i;\n}",
+    options: ["A. Infinite loop", "B. Nothing", "C. Syntax error", "D. Undefined variable"],
+    answerText: "A. Infinite loop"
   },
   {
     id: 55,
     type: "choice",
     question: "55.) A developer wants a webpage to automatically generate customized greetings for each user visiting the site. Which feature of PHP is MOST useful?",
-    options: ["Browser caching", "Server-side scripting", "Static HTML rendering", "CSS animation"],
-    answerText: "Server-side scripting"
+    options: ["A. Browser caching", "B. Server-side scripting", "C. Static HTML rendering", "D. CSS animation"],
+    answerText: "B. Server-side scripting"
   },
   {
     id: 56,
     type: "text",
-    question: "56.) Complete the code so that 3 will not be displayed in the output.\nfor($i=1; $i<=5; $i++){\n  if($i == 3){\n    _____\n  }\n  echo $i;\n}",
+    question: "56.) Complete the code so that 3 will not be displayed in the output.\n\nfor($i=1; $i<=5; $i++){\n  if($i==3){\n    _____\n  }\n  echo $i;\n}",
     answer: "continue"
   },
   {
     id: 57,
     type: "text",
-    question: "57.) Complete the parameter list so that each parameter variable will have a default value of 0.\nfunction add(_____ ){\n  return $a + $b;\n}",
+    question: "57.) Complete the parameter list so that each parameter variable will have a default value of 0.\n\nfunction add(_____ ){\n  return $a+$b;\n}",
     answer: "$a=0, $b=0"
   },
   {
     id: 58,
     type: "text",
-    question: "58.) Complete the alternative syntax.\nif($age >= 18):\n  echo \"Adult\";\n_____",
+    question: "58.) Complete the alternative syntax block keyword:\n\nif($age>=18):\n  echo \"Adult\";\n_____",
     answer: "endif"
   },
   {
     id: 59,
     type: "text",
-    question: "59.) Complete the loop to print numbers from 1 to 5.\nfor($i=1; $i<=5; $i_____ ){\n  echo $i;\n}",
+    question: "59.) Complete the loop to print numbers from 1 to 5.\n\nfor($i=1; $i<=5; $i_____ ){\n  echo $i;\n}",
     answer: "++"
   },
   {
     id: 60,
     type: "text",
-    question: "60.) Complete the command to display output.\n<?php\n_____ \"PHP\";\n?>",
+    question: "60.) Complete the command to display output.\n\n<?php\n  _____ \"PHP\";\n?>",
     answer: "echo"
   },
   {
     id: 61,
     type: "choice",
     question: "61.) Type casting permanently changes the original datatype stored in all variables referencing the value.",
-    options: ["True", "False"],
-    answerText: "False"
+    options: ["A. True", "B. False"],
+    answerText: "B. False"
   },
   {
     id: 62,
     type: "choice",
-    question: "62.) Analyze the code:\n$x = 5;\nif($x > 3){\n  echo \"A\";\n}else{\n  echo \"B\";\n}",
-    options: ["No output", "A", "AB", "B"],
-    answerText: "A"
+    question: "62.) Analyze the code:\n\n$x = 5;\nif ($x > 3){\n  echo \"A\";\n} else {\n  echo \"B\";\n}",
+    options: ["A. No output", "B. A", "C. AB", "D. B"],
+    answerText: "B. A"
   },
   {
     id: 63,
     type: "choice",
-    question: "63.) What will be the output?\n$x = 0;\nif($x = 1){\n  echo \"YES\";\n}else{\n  echo \"NO\";\n}",
-    options: ["NO", "Unknown", "Error", "YES"],
-    answerText: "YES"
+    question: "63.) What will be the output?\n\n$x = 0;\nif ($x = 1){\n  echo \"YES\";\n} else {\n  echo \"NO\";\n}",
+    options: ["A. NO", "B. Unknown", "C. Error", "D. YES"],
+    answerText: "D. YES"
   },
   {
     id: 64,
     type: "choice",
     question: "64.) A grading system must store Student Name, Subject, and Grade for hundreds of students. Which structure is MOST appropriate?",
-    options: ["Multiple variables", "Multiple arrays", "Multiple single-dimension array", "A single multi-dimension array"],
-    answerText: "A single multi-dimension array"
+    options: ["A. Multiple variables", "B. Multiple arrays", "C. Multiple single-dimension array", "D. A single multi-dimension array"],
+    answerText: "D. A single multi-dimension array"
   },
   {
     id: 65,
     type: "choice",
-    question: "65.) $x = 2;\n$y = 3;\n$z = 4;\necho $x + $y * $z - $y;\nWhat is the output?",
-    options: ["10", "11", "14"],
-    answerText: "11"
+    question: "65.) Evaluate the code:\n\n$x = 2;\n$y = 3;\n$z = 4;\necho $x + $y * $z - $y;\n\nWhat is the output?",
+    options: ["A. 10", "B. 11", "C. 14"],
+    answerText: "B. 11"
   },
   {
     id: 66,
     type: "choice",
-    question: "66.) Analyze the code:\nfor($i=1; $i<=5; $i++){\n  if($i == 4){\n    break;\n  }\n  echo $i;\n}",
-    options: ["1234", "123", "12345", "1235"],
-    answerText: "123"
+    question: "66.) Analyze the code:\n\nfor($i=1; $i<=5; $i++){\n  if($i==4){\n    break;\n  }\n  echo $i;\n}",
+    options: ["A. 1234", "B. 123", "C. 12345", "D. 1235"],
+    answerText: "B. 123"
   },
   {
     id: 67,
     type: "choice",
-    question: "67.) Which of the choices correctly reflects the output of the statement?\necho date(\"m d,Y h:i:s A\");",
-    options: ["06 19, 2026 08:05:57 PM", "Jun 19, 2026 08:05:57 PM", "Error", "6 19, 2026 8:5:57 PM"],
-    answerText: "06 19, 2026 08:05:57 PM"
+    question: "67.) Which of the choices correctly reflects the output of the statement?\n\necho date(\"m d,Y h:i:s A\");",
+    options: ["A. 06 19, 2026 08:05:57 PM", "B. Jun 19, 2026 08:05:57 PM", "C. Error", "D. 6 19, 2026 8:5:57 PM"],
+    answerText: "A. 06 19, 2026 08:05:57 PM"
   },
   {
     id: 68,
     type: "choice",
     question: "68.) What is the PRIMARY advantage of functions?",
-    options: ["Replace loops", "improves code readability", "Eliminate variables", "Encourage code reuse"],
-    answerText: "Encourage code reuse"
+    options: ["A. Replace loops", "B. improves code readability", "C. Eliminate variables", "D. Encourage code reuse"],
+    answerText: "D. Encourage code reuse"
   },
   {
     id: 69,
     type: "choice",
-    question: "69.) Analyze the code:\n$grades = array(\n  array(\"Ana\",90),\n  array(\"Ben\",85)\n);\necho $grades[1][0];\nWhat displayed?",
-    options: ["90", "Ben", "Ben 90", "Ana"],
-    answerText: "Ben"
+    question: "69.) Analyze the code:\n\n$grades = array(\n  array(\"Ana\",90),\n  array(\"Ben\",85)\n);\necho $grades[1][0];\n\nWhat is displayed?",
+    options: ["A. 90", "B. Ben", "C. Ben 90", "D. Ana"],
+    answerText: "B. Ben"
   },
   {
     id: 70,
     type: "choice",
-    question: "70.) What is wrong with this code?\nif($x = 5){\n  echo \"True\";\n}",
-    options: ["No problem in the code", "Undefined variable", "Syntax error", "Condition will always be true"],
-    answerText: "Condition will always be true"
+    question: "70.) What is wrong with this code?\n\nif ($x = 5){\n  echo \"True\";\n}",
+    options: ["A. No problem in the code", "B. Undefined variable", "C. Syntax error", "D. Condition will always be true"],
+    answerText: "D. Condition will always be true"
   },
   {
     id: 71,
     type: "choice",
-    question: "71.) What will be displayed?\n$x = 2;\nswitch($x){\n  case 1:\n  case 2:\n    echo \"A\";\n    echo \"B\";\n  case 3:\n    echo \"C\";\n}",
-    options: ["ABC", "B", "Error", "BC"],
-    answerText: "BC"
+    question: "71.) What will be displayed?\n\n$x = 2;\nswitch($x){\n  case 1:\n    echo \"A\";\n  case 2:\n    echo \"B\";\n  case 3:\n    echo \"C\";\n}",
+    options: ["A. ABC", "B. B", "C. Error", "D. BC"],
+    answerText: "D. BC"
   },
   {
     id: 72,
@@ -661,95 +970,95 @@ const quizData = [
   {
     id: 73,
     type: "choice",
-    question: "73.) Analyze the code:\nfunction display(){\n  echo \"PHP\";\n}\necho display();\nWhich statement BEST explains the result?",
-    options: ["Function is invalid", "Function returns \"PHP\"", "Error because echo cannot call functions", "Function displays \"PHP\" but returns NULL"],
-    answerText: "Function displays \"PHP\" but returns NULL"
+    question: "73.) Analyze the code:\n\nfunction display(){\n  echo \"PHP\";\n}\necho display();\n\nWhich statement BEST explains the result?",
+    options: ["A. Function is invalid", "B. Function returns \"PHP\"", "C. Error because echo cannot call functions", "D. Function displays \"PHP\" but returns NULL"],
+    answerText: "D. Function displays \"PHP\" but returns NULL"
   },
   {
     id: 74,
     type: "choice",
     question: "74.) PHP can process form submissions.",
-    options: ["True", "False"],
-    answerText: "True"
+    options: ["A. True", "B. False"],
+    answerText: "A. True"
   },
   {
     id: 75,
     type: "choice",
     question: "75.) include_once() allows duplicate file inclusion.",
-    options: ["True", "False"],
-    answerText: "False"
+    options: ["A. True", "B. False"],
+    answerText: "B. False"
   },
   {
     id: 76,
     type: "text",
-    question: "76.) Fill the blank with the correct casting operator to convert the string into an integer.\n$age = \"20\";\n$age = _____ $age;",
+    question: "76.) Fill the blank with the correct casting operator to convert the string into an integer:\n\n$age = \"20\";\n$age = _____ $age;",
     answer: "(int)"
   },
   {
     id: 77,
     type: "choice",
-    question: "77.) Analyze the code:\n$x = 5;\n$y = 10;\nif($x > 0 || $y < 0){\n  echo \"Valid\";\n}else{\n  echo \"Invalid\";\n}\nWhat is the output?",
-    options: ["Valid", "Error", "Invalid", "No output"],
-    answerText: "Valid"
+    question: "77.) Analyze the code:\n\n$x = 5;\n$y = 10;\nif ($x > 0 || $y < 0){\n  echo \"Valid\";\n} else {\n  echo \"Invalid\";\n}\n\nWhat is the output?",
+    options: ["A. Valid", "B. Error", "C. Invalid", "D. No output"],
+    answerText: "A. Valid"
   },
   {
     id: 78,
     type: "choice",
     question: "78.) A developer needs to store multiple student names under one variable. Which datatype is MOST suitable?",
-    options: ["Float", "Boolean", "Integer", "Array"],
-    answerText: "Array"
+    options: ["A. Float", "B. Boolean", "C. Integer", "D. Array"],
+    answerText: "D. Array"
   },
   {
     id: 79,
     type: "choice",
-    question: "79.) PHP files commonly use the .php extension.",
-    options: ["True", "False"],
-    answerText: "True"
+    question: "79.) PHP files commonly use the.php extension.",
+    options: ["A. True", "B. False"],
+    answerText: "A. True"
   },
   {
     id: 80,
     type: "choice",
     question: "80.) Multi-dimensional arrays can represent tabular data.",
-    options: ["True", "False"],
-    answerText: "True"
+    options: ["A. True", "B. False"],
+    answerText: "A. True"
   },
   {
     id: 81,
     type: "choice",
     question: "81.) Which data type is MOST appropriate for storing a student's GPA?",
-    options: ["Float", "Integer", "Boolean", "Array"],
-    answerText: "Float"
+    options: ["A. Float", "B. Integer", "C. Boolean", "D. Array"],
+    answerText: "A. Float"
   },
   {
     id: 82,
     type: "text",
-    question: "82.) Complete the code so that 'Access Granted' will be displayed if both the conditions are true.\nif($username == \"admin\" _____ $password == \"1234\"){\n  echo \"Access Granted\";\n}",
+    question: "82.) Complete the code so that 'Access Granted' will be displayed if both the conditions are true:\n\nif($username == \"admin\" _____ $password == \"1234\")",
     answer: "&&"
   },
   {
     id: 83,
     type: "text",
-    question: "83.) Fill the blank with the correct casting operator to convert the string into an integer.\n$age = \"20\";\n$age = _____ $age;",
+    question: "83.) Fill the blank with the correct casting operator to convert the string into an integer:\n\n$age = \"20\";\n$age = _____ $age;",
     answer: "(int)"
   },
   {
     id: 84,
     type: "choice",
     question: "84.) Which statement BEST describes a do-while loop?",
-    options: ["Used only for arrays", "Checks condition first", "Never repeats", "Executes at least once"],
-    answerText: "Executes at least once"
+    options: ["A. Used only for arrays", "B. Checks condition first", "C. Never repeats", "D. Executes at least once"],
+    answerText: "D. Executes at least once"
   },
   {
     id: 85,
     type: "choice",
     question: "85.) Which statement BEST describes a do-while loop?",
-    options: ["Used only for arrays", "Checks condition first", "Never repeats", "Executes at least once"],
-    answerText: "Executes at least once"
+    options: ["A. Used only for arrays", "B. Checks condition first", "C. Never repeats", "D. Executes at least once"],
+    answerText: "D. Executes at least once"
   },
   {
     id: 86,
     type: "text",
-    question: "86.) Complete the code so $x is accessible inside the function.\n$x = 20;\nfunction show(){\n  _____ $x;\n  echo $x;\n}",
+    question: "86.) Complete the code so $x is accessible inside the function:\n\n$x = 20;\nfunction show(){\n  _____ $x;\n  echo $x;\n}",
     answer: "global"
   },
   {
@@ -767,270 +1076,652 @@ const quizData = [
     id: 88,
     type: "choice",
     question: "88.) Why are arrays useful in web applications?",
-    options: ["They allow grouped data management", "They avoid using variables", "They replace HTML", "They avoid the usage of loops"],
-    answerText: "They allow grouped data management"
+    options: ["A. They allow grouped data management", "B. They avoid using variables", "C. They replace HTML", "D. They avoid the usage of loops"],
+    answerText: "A. They allow grouped data management"
   },
   {
     id: 89,
     type: "choice",
     question: "89.) Why are predefined functions important?",
-    options: ["They simplify HTML", "They simplify common programming tasks", "They replace PHP syntax", "They eliminate servers"],
-    answerText: "They simplify common programming tasks"
+    options: ["A. They simplify HTML", "B. They simplify common programming tasks", "C. They replace PHP syntax", "D. They eliminate servers"],
+    answerText: "B. They simplify common programming tasks"
   },
   {
     id: 90,
     type: "choice",
-    question: "90.) What is the output?\necho \"5\" + \"5 students\";",
-    options: ["10", "55 students", "5", "Error"],
-    answerText: "10"
+    question: "90.) What is the output?\n\necho \"5\" + \"5 students\";",
+    options: ["A. 10", "B. 55 students", "C. 5", "D. Error"],
+    answerText: "A. 10"
   },
   {
     id: 91,
     type: "choice",
     question: "91.) Which mathematical function calculates square root?",
-    options: ["Sqr()", "sqrt()", "sqr()", "Sqrt()"],
-    answerText: "sqrt()"
+    options: ["A. Sqr()", "B. sqrt()", "C. sqr()", "D. Sqrt()"],
+    answerText: "B. sqrt()"
   },
   {
     id: 92,
     type: "choice",
-    question: "92.) $x = 2;\n$y = 3;\n$z = 4;\necho $x + $y * $z - $y;\nWhat is the output?",
-    options: ["14", "11", "10", "8"],
-    answerText: "11"
+    question: "92.) Evaluate the code:\n\n$x = 2;\n$y = 3;\n$z = 4;\necho $x + $y * $z - $y;\n\nWhat is the output?",
+    options: ["A. 14", "B. 11", "C. 10", "D. 8"],
+    answerText: "B. 11"
   },
   {
     id: 93,
     type: "choice",
-    question: "93.) Analyze the code:\n$numbers = array(\n  1 => 30,\n  2 => 10,\n  0 => 20\n);\nksort($numbers);\necho $numbers[0];\nWhat is the output?",
-    options: ["10", "20", "Error"],
-    answerText: "20"
+    question: "93.) Analyze the code:\n\n$numbers = array(1 => 30, 2 => 10, 0 => 20);\nksort($numbers);\necho $numbers[0];\n\nWhat is the output?",
+    options: ["A. 10", "B. 20", "C. Error"],
+    answerText: "B. 20"
   },
   {
     id: 94,
     type: "choice",
     question: "94.) Which statement skips the current iteration and continues the loop?",
-    options: ["exit", "break", "return", "continue"],
-    answerText: "continue"
+    options: ["A. exit", "B. break", "C. return", "D. continue"],
+    answerText: "D. continue"
   },
   {
     id: 95,
     type: "choice",
-    question: "95.) Analyze the code:\nfunction greet($name = \"Juan\"){\n  echo \"Hello, $name\";\n}\n$name = \"Jose\";\ngreet();\nWhat is displayed?",
-    options: ["Error", "Hello, Juan", "Hello,", "Hello, Jose"],
-    answerText: "Hello, Juan"
+    question: "95.) Analyze the code:\n\nfunction greet($name = \"Juan\"){\n  echo \"Hello, $name\";\n}\n$name = \"Jose\";\ngreet();\n\nWhat is displayed?",
+    options: ["A. Error", "B. Hello, Juan", "C. Hello,", "D. Hello, Jose"],
+    answerText: "B. Hello, Juan"
   },
   {
     id: 96,
     type: "choice",
     question: "96.) A PHP script generates different outputs based on the current date. What characteristic does this demonstrate?",
-    options: ["Dynamic con", "Browser rendering", "Static processing", "Offline compilation"],
-    answerText: "Dynamic con"
+    options: ["A. Dynamic content", "B. Browser rendering", "C. Static processing", "D. Offline compilation"],
+    answerText: "A. Dynamic content"
   },
   {
     id: 97,
     type: "text",
-    question: "97.) Complete the loop to print numbers from 1 to 5.\nfor($i=1; $i<=5; $i_____ ){\n  echo $i;\n}",
+    question: "97.) Complete the loop to print numbers from 1 to 5:\n\nfor ($i = 1; $i <= 5; $i_____ ) {\n  echo $i;\n}",
     answer: "++"
   },
   {
     id: 98,
     type: "choice",
-    question: "98.) What will happen when this code runs?\n$x = 10;\nfunction demo(){\n  global $x;\n  echo $x;\n}\ndemo();",
-    options: ["Unknown", "It will display Null", "Error", "It will display 10"],
-    answerText: "It will display 10"
+    question: "98.) What will happen when this code runs?\n\n$x = 10;\nfunction demo(){\n  global $x;\n  echo $x;\n}\ndemo();\n\nWhat is displayed?",
+    options: ["A. Unknown", "B. It will display Null", "C. Error", "D. It will display 10"],
+    answerText: "D. It will display 10"
   },
   {
     id: 99,
     type: "choice",
     question: "99.) What is the PRIMARY advantage of functions?",
-    options: ["Replace loops", "Eliminate variables", "improves code readability", "Encourage code reuse"],
-    answerText: "Encourage code reuse"
+    options: ["A. Replace loops", "B. Eliminate variables", "C. improves code readability", "D. Encourage code reuse"],
+    answerText: "D. Encourage code reuse"
   },
   {
     id: 100,
     type: "choice",
     question: "100.) PHP is embedded directly within HTML and CANNOT be placed in a separate file.",
-    options: ["True", "False"],
-    answerText: "False"
+    options: ["A. True", "B. False"],
+    answerText: "B. False"
   }
 ];
+</script>
+
+<script>
+let currentQuizIndex = 0;
+const evaluatedQuestions = new Set();
+const userAnswersState = {}; 
+let draggedElement = null;
+let quizSubmitted = false;
 
 function shuffleArray(array) {
-    const arr = [...array];
-    for (let i = arr.length - 1; i > 0; i--) {
+    for (let i = array.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));
-        [arr[i], arr[j]] = [arr[j], arr[i]];
+        [array[i], array[j]] = [array[j], array[i]];
     }
-    return arr;
 }
 
-const evaluatedQuestions = new Set();
+function initQuizEngine() {
+    if (typeof quizData === 'undefined') {
+        document.getElementById('quiz-container').innerHTML = "<p style='color:red; font-weight:bold; padding:20px;'>Error: quiz-data.js was not loaded or is missing! Make sure both files are in the same directory.</p>";
+        return;
+    }
 
-function renderQuiz() {
-    const wrapper = document.getElementById('quiz-wrapper');
-    wrapper.innerHTML = ""; 
+    shuffleArray(quizData);
+
+    const jumpSelect = document.getElementById('question-jump');
+    jumpSelect.innerHTML = "";
+    document.getElementById('total-questions').innerText = quizData.length;
     
-    // Shuffle the full test layout
-    const randomizedQuestions = shuffleArray(quizData);
-
-    randomizedQuestions.forEach((q) => {
-        const masterIndex = quizData.findIndex(item => item.id === q.id);
-
-        const card = document.createElement('div');
-        card.className = 'question-card';
-        card.id = `qcard-${masterIndex}`;
-
-        const qText = document.createElement('div');
-        qText.className = 'question-text';
-        qText.innerText = q.question;
-        card.appendChild(qText);
-
-        if (q.type === 'choice') {
-            const optionsContainer = document.createElement('div');
-            optionsContainer.className = 'options-container';
-            
-            // Loop through options sequentially in their fixed sequence
-            q.options.forEach(opt => {
-                const label = document.createElement('label');
-                label.className = 'option-label';
-                
-                const radio = document.createElement('input');
-                radio.type = 'radio';
-                radio.name = `q-${masterIndex}`;
-                radio.value = opt;
-                
-                label.appendChild(radio);
-                label.appendChild(document.createTextNode(opt));
-                optionsContainer.appendChild(label);
-            });
-            card.appendChild(optionsContainer);
-            
-        } else if (q.type === 'text') {
-            const inputContainer = document.createElement('div');
-            inputContainer.className = 'text-input-container';
-            
-            const textInput = document.createElement('input');
-            textInput.type = 'text';
-            textInput.className = 'text-answer-field';
-            textInput.id = `input-${masterIndex}`;
-            textInput.placeholder = "Type your answer here...";
-            
-            inputContainer.appendChild(textInput);
-            card.appendChild(inputContainer);
-            
-        } else if (q.type === 'dropdown') {
-            const dropdownContainer = document.createElement('div');
-            dropdownContainer.className = 'dropdown-matching-container';
-            
-            q.matches.forEach((matchItem, matchIdx) => {
-                const row = document.createElement('div');
-                row.className = 'dropdown-row';
-                
-                const label = document.createElement('div');
-                label.className = 'dropdown-label';
-                label.innerText = `${matchItem.term} — `;
-                
-                const select = document.createElement('select');
-                select.className = 'quiz-select';
-                select.id = `select-${masterIndex}-${matchIdx}`;
-                
-                const defaultOpt = document.createElement('option');
-                defaultOpt.value = "";
-                defaultOpt.innerText = "-- Choose Match --";
-                select.appendChild(defaultOpt);
-                
-                q.dropdownOptions.forEach(optVal => {
-                    const option = document.createElement('option');
-                    option.value = optVal;
-                    option.innerText = optVal;
-                    select.appendChild(option);
-                });
-                
-                row.appendChild(label);
-                row.appendChild(select);
-                dropdownContainer.appendChild(row);
-            });
-            card.appendChild(dropdownContainer);
-        }
-
-        const checkBtn = document.createElement('button');
-        checkBtn.className = 'check-btn';
-        checkBtn.innerText = 'Check Answer';
-        checkBtn.onclick = () => verifyAnswer(masterIndex, q);
-        card.appendChild(checkBtn);
-
-        const feedback = document.createElement('div');
-        feedback.className = 'feedback';
-        feedback.id = `feedback-${masterIndex}`;
-        card.appendChild(feedback);
-
-        wrapper.appendChild(card);
+    quizData.forEach((item, index) => {
+        const opt = document.createElement('option');
+        opt.value = index;
+        opt.innerText = `Q. ${item.id}`;
+        jumpSelect.appendChild(opt);
     });
+
+    renderCurrentQuestionCard();
 }
 
-function verifyAnswer(index, questionObj) {
-    const feedback = document.getElementById(`feedback-${index}`);
-    let isCorrect = false;
-    let feedbackText = "";
+function restartQuiz() {
+    currentQuizIndex = 0;
+    evaluatedQuestions.clear();
+    Object.keys(userAnswersState).forEach(key => delete userAnswersState[key]);
+    quizSubmitted = false;
+    shuffleArray(quizData);
+    document.getElementById('evaluated-count').innerText = evaluatedQuestions.size;
+    updateScoreBox();
+    initQuizEngine();
+}
 
-    if (questionObj.type === 'choice') {
-        const selected = document.querySelector(`input[name="q-${index}"]:checked`);
-        if (!selected) {
-            alert("Please select an option first!");
-            return;
-        }
-        isCorrect = (selected.value === questionObj.answerText);
-        feedbackText = isCorrect ? "Correct! Perfect response." : `Incorrect. Correct Answer: ${questionObj.answerText}`;
-        
-    } else if (questionObj.type === 'text') {
-        const inputField = document.getElementById(`input-${index}`);
-        const userAnswer = inputField.value.trim();
-        if (userAnswer === "") {
-            alert("Please type an answer first!");
-            return;
-        }
-        isCorrect = (userAnswer.replace(/\s+/g, '') === questionObj.answer.trim().replace(/\s+/g, ''));
-        feedbackText = isCorrect ? "Correct! Perfect response." : `Incorrect. Correct Answer: ${questionObj.answer}`;
-        
-    } else if (questionObj.type === 'dropdown') {
-        let allAnswered = true;
-        let incorrectMatches = [];
-        let answersSheet = [];
+function renderCurrentQuestionCard() {
+    const container = document.getElementById('quiz-container');
+    container.innerHTML = ""; 
 
-        questionObj.matches.forEach((matchItem, matchIdx) => {
-            const selectEl = document.getElementById(`select-${index}-${matchIdx}`);
-            if (selectEl.value === "") {
-                allAnswered = false;
+    const q = quizData[currentQuizIndex];
+    if (!q || typeof q.question !== 'string' || typeof q.type !== 'string') {
+        container.innerHTML = '<div class="feedback incorrect" style="display:block;">Error: Question data is missing or invalid. Please reload the page or check quiz-data.js.</div>';
+        document.getElementById('prev-action-btn').disabled = true;
+        document.getElementById('next-action-btn').disabled = true;
+        document.getElementById('check-action-btn').disabled = true;
+        return;
+    }
+
+    document.getElementById('question-jump').value = currentQuizIndex;
+
+    const card = document.createElement('div');
+    card.className = 'question-card';
+    card.id = `qcard-${currentQuizIndex}`;
+
+    const qText = document.createElement('div');
+    qText.className = 'question-text';
+    qText.innerText = q.question;
+    card.appendChild(qText);
+
+    if (q.type === 'choice') {
+        const optionsContainer = document.createElement('div');
+        optionsContainer.className = 'options-container';
+        
+        q.options.forEach(opt => {
+            const label = document.createElement('label');
+            label.className = 'option-label';
+            
+            const radio = document.createElement('input');
+            radio.type = 'radio';
+            radio.name = `q-${currentQuizIndex}`;
+            radio.value = opt;
+            
+            if (userAnswersState[currentQuizIndex] && userAnswersState[currentQuizIndex].value === opt) {
+                radio.checked = true;
             }
-            const correctCheck = (selectEl.value === matchItem.correct);
-            answersSheet.push(`${matchItem.term} -> ${matchItem.correct}`);
-            if (!correctCheck) {
-                incorrectMatches.push(matchItem.term);
+            
+            label.appendChild(radio);
+            label.appendChild(document.createTextNode(opt));
+            optionsContainer.appendChild(label);
+        });
+        card.appendChild(optionsContainer);
+        
+    } else if (q.type === 'text') {
+        const inputContainer = document.createElement('div');
+        inputContainer.className = 'text-input-container';
+        
+        const textInput = document.createElement('input');
+        textInput.type = 'text';
+        textInput.className = 'text-answer-field';
+        textInput.id = `input-${currentQuizIndex}`;
+        textInput.placeholder = "Type your answer here...";
+        
+        if (userAnswersState[currentQuizIndex] && userAnswersState[currentQuizIndex].value !== null) {
+            textInput.value = userAnswersState[currentQuizIndex].value;
+        }
+        
+        inputContainer.appendChild(textInput);
+        card.appendChild(inputContainer);
+        
+    } else if (q.type === 'ordering') {
+        const orderingContainer = document.createElement('div');
+        orderingContainer.className = 'ordering-container';
+        
+        let itemsToOrder = [...q.items];
+        if (userAnswersState[currentQuizIndex] && userAnswersState[currentQuizIndex].value) {
+            itemsToOrder = userAnswersState[currentQuizIndex].value;
+        } else {
+            itemsToOrder.sort(() => Math.random() - 0.5);
+        }
+        
+        itemsToOrder.forEach((item, idx) => {
+            const orderItem = document.createElement('div');
+            orderItem.className = 'ordering-item';
+            orderItem.id = `order-${currentQuizIndex}-${idx}`;
+            orderItem.draggable = true;
+            orderItem.dataset.index = idx;
+            orderItem.dataset.value = item;
+            orderItem.textContent = item;
+            
+            orderItem.addEventListener('dragstart', handleDragStart);
+            orderItem.addEventListener('dragend', handleDragEnd);
+            orderItem.addEventListener('dragover', handleDragOver);
+            orderItem.addEventListener('drop', handleDrop);
+            orderItem.addEventListener('dragleave', handleDragLeave);
+            
+            orderingContainer.appendChild(orderItem);
+        });
+        
+        card.appendChild(orderingContainer);
+        
+    } else if (q.type === 'dropdown') {
+        const dropdownContainer = document.createElement('div');
+        dropdownContainer.className = 'dropdown-matching-container';
+        
+        q.matches.forEach((matchItem, subIdx) => {
+            const row = document.createElement('div');
+            row.className = 'dropdown-row';
+            
+            const label = document.createElement('div');
+            label.className = 'dropdown-label';
+            label.innerText = matchItem.term;
+            
+            const select = document.createElement('select');
+            select.className = 'quiz-select';
+            select.id = `select-${currentQuizIndex}-${subIdx}`;
+            
+            const defaultOpt = document.createElement('option');
+            defaultOpt.value = "";
+            defaultOpt.innerText = "-- Choose Match --";
+            select.appendChild(defaultOpt);
+            
+            q.dropdownOptions.forEach(optVal => {
+                const option = document.createElement('option');
+                option.value = optVal;
+                option.innerText = optVal;
+                select.appendChild(option);
+            });
+
+            if (userAnswersState[currentQuizIndex] && userAnswersState[currentQuizIndex].value && userAnswersState[currentQuizIndex].value[subIdx]) {
+                select.value = userAnswersState[currentQuizIndex].value[subIdx];
+            }
+            
+            row.appendChild(label);
+            row.appendChild(select);
+            dropdownContainer.appendChild(row);
+        });
+        card.appendChild(dropdownContainer);
+    }
+
+    const feedbackBlock = document.createElement('div');
+    feedbackBlock.className = 'feedback';
+    feedbackBlock.id = `feedback-${currentQuizIndex}`;
+    card.appendChild(feedbackBlock);
+
+    container.appendChild(card);
+
+    document.getElementById('prev-action-btn').disabled = (currentQuizIndex === 0);
+    const isCurrentQuestionChecked = userAnswersState[currentQuizIndex] && userAnswersState[currentQuizIndex].checked;
+    document.getElementById('next-action-btn').disabled = (currentQuizIndex === quizData.length - 1) || !isCurrentQuestionChecked;
+
+    if (userAnswersState[currentQuizIndex] && userAnswersState[currentQuizIndex].checked) {
+        showFeedbackUI(currentQuizIndex, userAnswersState[currentQuizIndex].isCorrect, userAnswersState[currentQuizIndex].msgText);
+    }
+}
+
+function navigateQuestion(step) {
+    const nextTarget = currentQuizIndex + step;
+    if (nextTarget >= 0 && nextTarget < quizData.length) {
+        // Only allow moving forward if current question has been checked
+        if (step > 0 && (!userAnswersState[currentQuizIndex] || !userAnswersState[currentQuizIndex].checked)) {
+            alert("Please check your answer before moving to the next question!");
+            return;
+        }
+        saveCurrentInputState();
+        currentQuizIndex = nextTarget;
+        renderCurrentQuestionCard();
+    }
+}
+
+function jumpToQuestion(indexVal) {
+    const parsedIdx = parseInt(indexVal, 10);
+    if (!isNaN(parsedIdx) && parsedIdx >= 0 && parsedIdx < quizData.length) {
+        saveCurrentInputState();
+        currentQuizIndex = parsedIdx;
+        renderCurrentQuestionCard();
+    }
+}
+
+function saveCurrentInputState() {
+    const q = quizData[currentQuizIndex];
+    if (!q) return;
+
+    if (!userAnswersState[currentQuizIndex]) {
+        userAnswersState[currentQuizIndex] = { checked: false, isCorrect: false, msgText: "", value: null };
+    }
+
+    if (userAnswersState[currentQuizIndex].checked) return;
+
+    if (q.type === 'choice') {
+        const checkedInput = document.querySelector(`input[name="q-${currentQuizIndex}"]:checked`);
+        userAnswersState[currentQuizIndex].value = checkedInput ? checkedInput.value : null;
+    } else if (q.type === 'text') {
+        const textIn = document.getElementById(`input-${currentQuizIndex}`);
+        userAnswersState[currentQuizIndex].value = textIn ? textIn.value.trim() : "";
+    } else if (q.type === 'ordering') {
+        const orderingItems = document.querySelectorAll(`.ordering-item`);
+        userAnswersState[currentQuizIndex].value = Array.from(orderingItems).map(item => item.dataset.value);
+    } else if (q.type === 'dropdown') {
+        const selections = [];
+        q.matches.forEach((_, subIdx) => {
+            const selectEl = document.getElementById(`select-${currentQuizIndex}-${subIdx}`);
+            selections.push(selectEl ? selectEl.value : "");
+        });
+        userAnswersState[currentQuizIndex].value = selections;
+    }
+}
+
+function triggerVerification() {
+    const q = quizData[currentQuizIndex];
+    let isCorrect = false;
+    let textFeedbackMessageText = "";
+
+    if (q.type === 'choice') {
+        const selectionTarget = document.querySelector(`input[name="q-${currentQuizIndex}"]:checked`);
+        if (!selectionTarget) {
+            alert("Please select an option first before evaluation!");
+            return;
+        }
+        
+        isCorrect = (selectionTarget.value === q.answerText);
+        textFeedbackMessageText = isCorrect ? "Correct! Perfect response." : `Incorrect.\nCorrect Answer: ${q.answerText}`;
+        userAnswersState[currentQuizIndex] = { checked: true, isCorrect: isCorrect, msgText: textFeedbackMessageText, value: selectionTarget.value };
+
+    } else if (q.type === 'text') {
+        const fieldInput = document.getElementById(`input-${currentQuizIndex}`);
+        const userCleanedValue = fieldInput ? fieldInput.value.trim() : "";
+        if (userCleanedValue === "") {
+            alert("Please input your textual answer string first before verifying response!");
+            return;
+        }
+
+        const flattenStr = (str) => str.replace(/\s+/g, '').replace(/["']/g, '"').replace(/;$/, '');
+        isCorrect = (flattenStr(userCleanedValue) === flattenStr(q.answer));
+        textFeedbackMessageText = isCorrect ? "Correct! Perfect response." : `Incorrect.\nCorrect Answer: ${q.answer}`;
+        userAnswersState[currentQuizIndex] = { checked: true, isCorrect: isCorrect, msgText: textFeedbackMessageText, value: userCleanedValue };
+
+    } else if (q.type === 'ordering') {
+        const orderingItems = document.querySelectorAll(`.ordering-item`);
+        const currentOrder = Array.from(orderingItems).map(item => item.dataset.value);
+        isCorrect = JSON.stringify(currentOrder) === JSON.stringify(q.correctOrder);
+        textFeedbackMessageText = isCorrect ? "Correct! Perfect order." : `Incorrect order.\nCorrect order:\n• ${q.correctOrder.join('\n• ')}`;
+        userAnswersState[currentQuizIndex] = { checked: true, isCorrect: isCorrect, msgText: textFeedbackMessageText, value: currentOrder };
+
+    } else if (q.type === 'dropdown') {
+        let executionHalt = false;
+        let mappingFaultTracks = [];
+        let systemAnswerGuideBook = [];
+        let internalSelectionsCache = [];
+
+        q.matches.forEach((matchUnit, subIdx) => {
+            const domSelectElement = document.getElementById(`select-${currentQuizIndex}-${subIdx}`);
+            const selectedVal = domSelectElement ? domSelectElement.value : "";
+            internalSelectionsCache.push(selectedVal);
+
+            if (selectedVal === "") {
+                executionHalt = true;
+            }
+            
+            const matchValid = (selectedVal === matchUnit.correct);
+            systemAnswerGuideBook.push(`${matchUnit.term} -> ${matchUnit.correct}`);
+            if (!matchValid) {
+                mappingFaultTracks.push(matchUnit.term);
             }
         });
 
-        if (!allAnswered) {
-            alert("Please select an option for all items in this matching question!");
+        if (executionHalt) {
+            alert("Please complete selecting valid assignments for each matching category element entry row present inside this block!");
             return;
         }
 
-        isCorrect = (incorrectMatches.length === 0);
-        feedbackText = isCorrect ? "Correct! All pairs matched perfectly." : `Incorrect matching definition layout.\nCorrect Configuration:\n• ${answersSheet.join('\n• ')}`;
+        isCorrect = (mappingFaultTracks.length === 0);
+        textFeedbackMessageText = isCorrect ? "Correct! All pairs matched perfectly." : `Incorrect matching layout arrangement.\n\nCorrect Layout Assignment:\n• ${systemAnswerGuideBook.join('\n• ')}`;
+        userAnswersState[currentQuizIndex] = { checked: true, isCorrect: isCorrect, msgText: textFeedbackMessageText, value: internalSelectionsCache };
     }
 
-    feedback.style.display = 'block';
-    if (isCorrect) {
-        feedback.className = 'feedback correct';
-    } else {
-        feedback.className = 'feedback incorrect';
-    }
-    feedback.innerText = feedbackText;
-
-    evaluatedQuestions.add(index);
+    showFeedbackUI(currentQuizIndex, isCorrect, textFeedbackMessageText);
+    evaluatedQuestions.add(currentQuizIndex);
     document.getElementById('evaluated-count').innerText = evaluatedQuestions.size;
+    updateScoreBox();
+    
+    // Enable Next button now that the answer has been checked
+    if (currentQuizIndex < quizData.length - 1) {
+        document.getElementById('next-action-btn').disabled = false;
+    }
 }
 
-window.onload = renderQuiz;
+function evaluateStoredAnswer(q, state) {
+    if (!q || !state) return false;
+
+    if (q.type === 'choice') {
+        return state.value === q.answerText;
+    }
+
+    if (q.type === 'text') {
+        if (!state.value || state.value.trim() === '') return false;
+        return normalizeTextAnswer(state.value) === normalizeTextAnswer(q.answer);
+    }
+
+    if (q.type === 'ordering') {
+        if (!Array.isArray(state.value) || state.value.length !== q.correctOrder.length) return false;
+        return JSON.stringify(state.value) === JSON.stringify(q.correctOrder);
+    }
+
+    if (q.type === 'dropdown') {
+        if (!Array.isArray(state.value) || state.value.length !== q.matches.length) return false;
+        return q.matches.every((match, idx) => state.value[idx] === match.correct);
+    }
+
+    return false;
+}
+
+function autoEvaluateQuestion(index) {
+    const q = quizData[index];
+    if (!q) return;
+
+    if (!userAnswersState[index]) {
+        userAnswersState[index] = { checked: false, isCorrect: false, msgText: '', value: null };
+    }
+
+    const state = userAnswersState[index];
+    if (state.checked) {
+        evaluatedQuestions.add(index);
+        return;
+    }
+
+    const wasAnswered = state.value !== null && state.value !== '' && !(Array.isArray(state.value) && state.value.length === 0);
+    const isCorrect = evaluateStoredAnswer(q, state);
+    const correctText = getCorrectAnswerText(q);
+
+    state.checked = true;
+    state.isCorrect = isCorrect;
+    state.msgText = isCorrect
+        ? 'Correct! Auto-evaluated.'
+        : wasAnswered
+            ? `Incorrect. Correct Answer: ${correctText}`
+            : `No answer given. Correct Answer: ${correctText}`;
+
+    evaluatedQuestions.add(index);
+}
+
+function submitQuiz() {
+    saveCurrentInputState();
+    quizSubmitted = true;
+
+    for (let i = 0; i < quizData.length; i++) {
+        autoEvaluateQuestion(i);
+    }
+
+    updateScoreBox();
+    renderCurrentQuestionCard();
+}
+
+function calculateScore() {
+    return Object.values(userAnswersState).filter(entry => entry && entry.checked && entry.isCorrect).length;
+}
+
+function normalizeTextAnswer(text) {
+    return String(text || "").replace(/\s+/g, '').replace(/["']/g, '"').replace(/;$/, '');
+}
+
+function escapeHtml(text) {
+    return String(text)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+}
+
+function getCorrectAnswerText(q) {
+    if (!q) return '';
+    if (q.type === 'choice') {
+        return q.answerText;
+    }
+    if (q.type === 'text') {
+        return q.answer;
+    }
+    if (q.type === 'ordering') {
+        return q.correctOrder.join(' → ');
+    }
+    if (q.type === 'dropdown') {
+        return q.matches.map(match => `${match.term}: ${match.correct}`).join('; ');
+    }
+    return '';
+}
+
+function updateScoreBox() {
+    const evaluatedCount = evaluatedQuestions.size;
+    const total = quizData.length;
+    document.getElementById('evaluated-count').innerText = evaluatedCount;
+
+    const finalScoreEl = document.getElementById('final-score');
+    const summaryDetails = document.getElementById('summary-details');
+    const summaryTitle = document.getElementById('wrong-summary-title');
+    const resultsPanel = document.getElementById('results-panel');
+    if (!finalScoreEl || !summaryDetails || !summaryTitle || !resultsPanel) return;
+
+    if (evaluatedCount === total) {
+        const correct = calculateScore();
+        const percent = total ? Math.round((correct / total) * 100) : 0;
+        finalScoreEl.innerText = `Final Score: ${correct}/${total} (${percent}%)`;
+        finalScoreEl.style.display = 'block';
+
+        const wrongEntries = Object.entries(userAnswersState)
+            .filter(([_, entry]) => entry && entry.checked && !entry.isCorrect)
+            .map(([idx, entry]) => {
+                const qIndex = Number(idx);
+                const q = quizData[qIndex];
+                const correctAnswer = getCorrectAnswerText(q);
+                return `<li><button type="button" class="review-link" data-index="${qIndex}">Q${q.id}</button>: ${escapeHtml(correctAnswer)}</li>`;
+            });
+
+        if (wrongEntries.length === 0) {
+            summaryDetails.innerHTML = '<strong>Well done! You answered all questions correctly.</strong>';
+            summaryTitle.style.display = 'none';
+        } else {
+            summaryTitle.style.display = 'block';
+            summaryDetails.innerHTML = `<ol style="margin:8px 0 0 18px;">${wrongEntries.join('')}</ol>`;
+        }
+
+        resultsPanel.style.display = 'block';
+        summaryDetails.style.display = 'block';
+    } else {
+        finalScoreEl.style.display = 'none';
+        finalScoreEl.innerText = '';
+        resultsPanel.style.display = 'none';
+        summaryDetails.innerHTML = '';
+        summaryTitle.style.display = 'none';
+    }
+}
+
+function toggleSummary() {
+    const summaryDetails = document.getElementById('summary-details');
+    const toggleButton = document.getElementById('toggle-summary-btn');
+    if (!summaryDetails || !toggleButton) return;
+
+    if (summaryDetails.style.display === 'none' || summaryDetails.style.display === '') {
+        summaryDetails.style.display = 'block';
+        toggleButton.innerText = 'Hide report';
+    } else {
+        summaryDetails.style.display = 'none';
+        toggleButton.innerText = 'Show report';
+    }
+}
+
+document.body.addEventListener('click', function(e) {
+    if (e.target.matches('.review-link')) {
+        const index = Number(e.target.dataset.index);
+        if (!Number.isNaN(index)) {
+            jumpToQuestion(index);
+        }
+    }
+});
+
+function showFeedbackUI(index, isCorrect, textMessage) {
+    const el = document.getElementById(`feedback-${index}`);
+    if (!el) return;
+    
+    el.style.display = 'block';
+    if (isCorrect) {
+        el.className = 'feedback correct';
+    } else {
+        el.className = 'feedback incorrect';
+    }
+    el.innerText = textMessage;
+}
+
+function handleDragStart(e) {
+    draggedElement = this;
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+}
+
+function handleDragEnd(e) {
+    this.classList.remove('dragging');
+    document.querySelectorAll('.ordering-item').forEach(item => item.classList.remove('drag-over'));
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    if (this !== draggedElement) {
+        this.classList.add('drag-over');
+    }
+    return false;
+}
+
+function handleDragLeave(e) {
+    this.classList.remove('drag-over');
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    if (draggedElement !== this) {
+        const allItems = Array.from(this.parentNode.children);
+        const draggedIndex = allItems.indexOf(draggedElement);
+        const targetIndex = allItems.indexOf(this);
+        
+        if (draggedIndex < targetIndex) {
+            this.parentNode.insertBefore(draggedElement, this.nextSibling);
+        } else {
+            this.parentNode.insertBefore(draggedElement, this);
+        }
+    }
+    
+    this.classList.remove('drag-over');
+    return false;
+}
+
+window.onload = initQuizEngine;
 </script>
 
 </body>
