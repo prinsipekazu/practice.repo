@@ -478,6 +478,10 @@
         <label for="question-jump">Go To:</label>
       <select id="question-jump" class="nav-select" onchange="jumpToQuestion(this.value)"></select>
       <button id="theme-toggle" class="theme-toggle" onclick="toggleTheme()" aria-pressed="false">🌙 Dark</button>
+      <label class="theme-toggle" style="align-items:center; gap:6px;">
+        <input type="checkbox" id="show-feedback-toggle" style="width:16px; height:16px; margin:0;" />
+        <span id="show-feedback-label" style="font-weight:800;">Show Answer</span>
+      </label>
     </div>
 
     <div id="quiz-container"></div>
@@ -488,8 +492,6 @@
             <button class="quiz-btn nav-btn" id="restart-action-btn" onclick="restartQuiz()">Restart</button>
             <button class="quiz-btn nav-btn" id="next-action-btn" onclick="navigateQuestion(1)">Next →</button>
         </div>
-        <button class="quiz-btn submit-btn" id="submit-action-btn" onclick="triggerVerification()">Submit Answer</button>
-
         <button class="quiz-btn finish-btn" id="finish-action-btn" onclick="finishQuiz()">Finish Quiz</button>
     </div>
 
@@ -1208,7 +1210,7 @@ const quizData = [
     id: 99,
     type: "choice",
     question: "99.) What is the PRIMARY advantage of functions?",
-    options: ["A. Replace loops", "B. Eliminate variables", "C. improves code readability", "D. Encourage code reuse<script>"],
+    options: ["A. Replace loops", "B. Eliminate variables", "C. improves code readability", "D. Encourage code reuse"],
     answerText: "D. Encourage code reuse"
   },
   {
@@ -1361,10 +1363,27 @@ function renderCurrentQuestionCard() {
     container.appendChild(card);
 
     document.getElementById("prev-action-btn").disabled = currentQuizIndex === 0;
-    document.getElementById("next-action-btn").disabled = currentQuizIndex === randomizedQuizData.length - 1 || !alreadyChecked;
+    const nextBtn = document.getElementById("next-action-btn");
+    if (nextBtn) {
+      nextBtn.disabled = currentQuizIndex === randomizedQuizData.length - 1;
+      try {
+        const showFeedbackStored = localStorage.getItem(SHOW_FEEDBACK_KEY);
+        const showFeedback = showFeedbackStored === null ? true : showFeedbackStored === 'true';
+        if (alreadyChecked) {
+          nextBtn.innerText = "Next →";
+        } else {
+          nextBtn.innerText = showFeedback ? "Submit Answer" : "Submit & Next";
+        }
+      } catch (e) {
+        nextBtn.innerText = alreadyChecked ? "Next →" : "Submit Answer";
+      }
+    }
 
-    document.getElementById("submit-action-btn").disabled = !!alreadyChecked;
-    document.getElementById("submit-action-btn").innerText = alreadyChecked ? "Answer Submitted" : "Submit Answer";
+    const submitBtn = document.getElementById("submit-action-btn");
+    if (submitBtn) {
+      submitBtn.disabled = !!alreadyChecked;
+      submitBtn.innerText = alreadyChecked ? "Answer Submitted" : "Submit Answer";
+    }
 
     const finishBtn = document.getElementById("finish-action-btn");
     if (finishBtn) {
@@ -1372,11 +1391,28 @@ function renderCurrentQuestionCard() {
     }
 
     if (alreadyChecked) {
-        showFeedbackUI(
+      try {
+        const showFeedbackStored = localStorage.getItem(SHOW_FEEDBACK_KEY);
+        const showFeedback = showFeedbackStored === null ? true : showFeedbackStored === 'true';
+
+        if (showFeedback) {
+          showFeedbackUI(
             stateKey,
             currentState.isCorrect,
             currentState.msgText
+          );
+        } else {
+          // Ensure feedback element is hidden when the user disabled immediate feedback
+          const fb = document.getElementById(`feedback-${stateKey}`);
+          if (fb) fb.style.display = 'none';
+        }
+      } catch (e) {
+        showFeedbackUI(
+          stateKey,
+          currentState.isCorrect,
+          currentState.msgText
         );
+      }
     }
 }
 
@@ -1512,25 +1548,43 @@ function renderDropdownQuestion(card, q, stateKey) {
 }
 
 function navigateQuestion(step) {
-    const nextTarget = currentQuizIndex + step;
+  const nextTarget = currentQuizIndex + step;
+
+  if (nextTarget < 0 || nextTarget >= randomizedQuizData.length) {
+    return;
+  }
+
+  // If moving forward and current question not yet checked, treat Next as Submit
+  if (step > 0) {
     const stateKey = getStateKey();
     const currentState = userAnswersState[stateKey];
 
-    if (nextTarget < 0 || nextTarget >= randomizedQuizData.length) {
-        return;
-    }
+    if (!currentState || !currentState.checked) {
+      // First Next: depending on preference either show feedback and stay,
+      // or silently evaluate and immediately advance.
+      triggerVerification(true);
 
-    if (step > 0 && (!currentState || !currentState.checked)) {
-        const proceed = confirm("You have not submitted this answer yet. Go to the next question anyway?");
-
-        if (!proceed) {
-            return;
+      try {
+        const showFeedbackStored = localStorage.getItem(SHOW_FEEDBACK_KEY);
+        const showFeedback = showFeedbackStored === null ? true : showFeedbackStored === 'true';
+        if (!showFeedback) {
+          // Silently advance to next question
+          setTimeout(() => {
+            currentQuizIndex = nextTarget;
+            renderCurrentQuestionCard();
+          }, 120);
         }
-    }
+      } catch (e) {
+        // ignore and keep current behavior (stay on question)
+      }
 
-    saveCurrentInputState();
-    currentQuizIndex = nextTarget;
-    renderCurrentQuestionCard();
+      return;
+    }
+  }
+
+  saveCurrentInputState();
+  currentQuizIndex = nextTarget;
+  renderCurrentQuestionCard();
 }
 
 function jumpToQuestion(indexVal) {
@@ -1579,76 +1633,106 @@ function saveCurrentInputState() {
     }
 }
 
-function triggerVerification() {
-    const q = getCurrentQuestion();
-    if (!q) return;
+function triggerVerification(force = false) {
+  const q = getCurrentQuestion();
+  if (!q) return;
 
-    const stateKey = getStateKey();
+  const stateKey = getStateKey();
 
-    if (userAnswersState[stateKey] && userAnswersState[stateKey].checked) {
+  if (userAnswersState[stateKey] && userAnswersState[stateKey].checked) {
+    return;
+  }
+
+  saveCurrentInputState();
+
+  let isCorrect = false;
+  let feedbackText = "";
+
+  if (q.type === "choice") {
+    const userValue = userAnswersState[stateKey]?.value;
+
+    if (!userValue) {
+      if (!force) {
+        alert("Please select an option first.");
         return;
+      } else {
+        isCorrect = false;
+        feedbackText = `Incorrect.\nCorrect Answer: ${q.answerText}`;
+      }
+    } else {
+      isCorrect = userValue === q.answerText;
+      feedbackText = isCorrect ? "Correct!" : `Incorrect.\nCorrect Answer: ${q.answerText}`;
     }
+  } else if (q.type === "text") {
+    const userValue = userAnswersState[stateKey]?.value || "";
 
-    saveCurrentInputState();
+    if (userValue.trim() === "") {
+      if (!force) {
+        alert("Please type your answer first.");
+        return;
+      } else {
+        isCorrect = false;
+        feedbackText = `Incorrect.\nCorrect Answer: ${q.answer}`;
+      }
+    } else {
+      isCorrect = normalizeTextAnswer(userValue) === normalizeTextAnswer(q.answer);
+      feedbackText = isCorrect ? "Correct!" : `Incorrect.\nCorrect Answer: ${q.answer}`;
+    }
+  } else if (q.type === "ordering") {
+    const currentOrder = userAnswersState[stateKey]?.value || [];
 
-    let isCorrect = false;
-    let feedbackText = "";
+    isCorrect = JSON.stringify(currentOrder) === JSON.stringify(q.correctOrder);
+    feedbackText = isCorrect
+      ? "Correct! Perfect order."
+      : `Incorrect order.\nCorrect order:\n• ${q.correctOrder.join("\n• ")}`;
+  } else if (q.type === "dropdown") {
+    const selections = userAnswersState[stateKey]?.value || [];
 
-    if (q.type === "choice") {
-        const userValue = userAnswersState[stateKey]?.value;
-
-        if (!userValue) {
-            alert("Please select an option first.");
-            return;
-        }
-
-        isCorrect = userValue === q.answerText;
-        feedbackText = isCorrect ? "Correct!" : `Incorrect.\nCorrect Answer: ${q.answerText}`;
-    } else if (q.type === "text") {
-        const userValue = userAnswersState[stateKey]?.value || "";
-
-        if (userValue.trim() === "") {
-            alert("Please type your answer first.");
-            return;
-        }
-
-        isCorrect = normalizeTextAnswer(userValue) === normalizeTextAnswer(q.answer);
-        feedbackText = isCorrect ? "Correct!" : `Incorrect.\nCorrect Answer: ${q.answer}`;
-    } else if (q.type === "ordering") {
-        const currentOrder = userAnswersState[stateKey]?.value || [];
-
-        isCorrect = JSON.stringify(currentOrder) === JSON.stringify(q.correctOrder);
-        feedbackText = isCorrect
-            ? "Correct! Perfect order."
-            : `Incorrect order.\nCorrect order:\n• ${q.correctOrder.join("\n• ")}`;
-    } else if (q.type === "dropdown") {
-        const selections = userAnswersState[stateKey]?.value || [];
-
-        if (selections.some(item => item === "") || selections.length !== q.matches.length) {
-            alert("Please complete all dropdown matches first.");
-            return;
-        }
-
+    if (selections.some(item => item === "") || selections.length !== q.matches.length) {
+      if (!force) {
+        alert("Please complete all dropdown matches first.");
+        return;
+      } else {
         const answerGuide = q.matches.map(match => `${match.term} -> ${match.correct}`);
-        isCorrect = q.matches.every((match, idx) => selections[idx] === match.correct);
-        feedbackText = isCorrect
-            ? "Correct! All pairs matched perfectly."
-            : `Incorrect matching.\n\nCorrect Matches:\n• ${answerGuide.join("\n• ")}`;
+        isCorrect = false;
+        feedbackText = `Incorrect matching.\n\nCorrect Matches:\n• ${answerGuide.join("\n• ")}`;
+      }
+    } else {
+      const answerGuide = q.matches.map(match => `${match.term} -> ${match.correct}`);
+      isCorrect = q.matches.every((match, idx) => selections[idx] === match.correct);
+      feedbackText = isCorrect
+        ? "Correct! All pairs matched perfectly."
+        : `Incorrect matching.\n\nCorrect Matches:\n• ${answerGuide.join("\n• ")}`;
     }
+  }
 
-    userAnswersState[stateKey] = {
-        ...userAnswersState[stateKey],
-        checked: true,
-        isCorrect: isCorrect,
-        msgText: feedbackText
-    };
+  userAnswersState[stateKey] = {
+    ...userAnswersState[stateKey],
+    checked: true,
+    isCorrect: isCorrect,
+    msgText: feedbackText
+  };
 
-    evaluatedQuestions.add(stateKey);
-    document.getElementById("evaluated-count").innerText = evaluatedQuestions.size;
+  evaluatedQuestions.add(stateKey);
+  const evaluatedEl = document.getElementById("evaluated-count");
+  if (evaluatedEl) evaluatedEl.innerText = evaluatedQuestions.size;
 
+  // Only show immediate feedback if user enabled it
+  try {
+    const showFeedbackStored = localStorage.getItem(SHOW_FEEDBACK_KEY);
+    const showFeedback = showFeedbackStored === null ? true : showFeedbackStored === 'true';
+    if (showFeedback) {
+      showFeedbackUI(stateKey, isCorrect, feedbackText);
+    } else {
+      // hide feedback UI if present
+      const el = document.getElementById(`feedback-${stateKey}`);
+      if (el) el.style.display = 'none';
+    }
+  } catch (e) {
     showFeedbackUI(stateKey, isCorrect, feedbackText);
-    updateScoreBox();
-    renderCurrentQuestionCard();
+  }
+  updateScoreBox();
+  renderCurrentQuestionCard();
 }
 
 function calculateScore() {
@@ -1872,6 +1956,8 @@ window.onload = initQuizEngine;
 <script>
 // Theme handling: persist preference in localStorage and apply via html[data-theme]
 const THEME_KEY = 'site-theme';
+const SHOW_FEEDBACK_KEY = 'show-feedback';
+
 function applyTheme(theme) {
   try {
     if (theme === 'dark') {
@@ -1912,6 +1998,31 @@ function initThemeFromStorage() {
 
 // Initialize theme as soon as possible
 initThemeFromStorage();
+// Initialize show-feedback toggle
+function initShowFeedbackFromStorage() {
+  const stored = localStorage.getItem(SHOW_FEEDBACK_KEY);
+  const enabled = stored === null ? true : stored === 'true';
+  const chk = document.getElementById('show-feedback-toggle');
+  if (chk) chk.checked = enabled;
+}
+
+function setShowFeedback(value) {
+  try {
+    localStorage.setItem(SHOW_FEEDBACK_KEY, value ? 'true' : 'false');
+    const chk = document.getElementById('show-feedback-toggle');
+    if (chk) chk.checked = !!value;
+  } catch (e) {
+    console.warn('Could not save show-feedback', e);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  initShowFeedbackFromStorage();
+  const chk = document.getElementById('show-feedback-toggle');
+  if (chk) {
+    chk.addEventListener('change', (e) => setShowFeedback(e.target.checked));
+  }
+});
 </script>
 </body>
 </html>
