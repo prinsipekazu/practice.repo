@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHP Interactive Reviewer (with Dropdowns)</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f7f6;
+            color: #333;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        h1 {
+            text-align: center;
+            color: #4A148C;
+            border-bottom: 2px solid #7B1FA2;
+            padding-bottom: 10px;
+        }
+        .quiz-info {
+            text-align: center;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #666;
+        }
+        .question-card {
+            background: #fafafa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 20px;
+            margin-bottom: 25px;
+        }
+        .question-text {
+            font-weight: 600;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            white-space: pre-wrap;
+        }
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .option-label {
+            display: block;
+            padding: 10px 15px;
+            background: #fff;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        .option-label:hover {
+            background: #f0f0f0;
+        }
+        .option-label input {
+            margin-right: 10px;
+        }
+        .text-input-container {
+            margin-top: 10px;
+        }
+        .text-answer-field {
+            width: 100%;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .dropdown-matching-container {
+            margin-top: 15px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 6px;
+        }
+        .dropdown-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+        }
+        .dropdown-label {
+            font-weight: bold;
+            flex: 1;
+        }
+        .quiz-select {
+            padding: 8px 12px;
+            font-size: 0.95em;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            flex: 1;
+            max-width: 350px;
+        }
+        .check-btn {
+            background-color: #7B1FA2;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1em;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+            transition: background 0.2s;
+        }
+        .check-btn:hover {
+            background-color: #4A148C;
+        }
+        .feedback {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: none;
+            white-space: pre-wrap;
+        }
+        .correct {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .incorrect {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .score-summary {
+            text-align: center;
+            font-size: 1.3em;
+            font-weight: bold;
+            margin-top: 30px;
+            padding: 20px;
+            background: #E1BEE7;
+            border-radius: 6px;
+            color: #4A148C;
+            position: sticky;
+            bottom: 10px;
+            box-shadow: 0 -2px 10px rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>PHP Interactive Reviewer</h1>
+    <div class="quiz-info">Total Questions: 100 (Questions Randomized, Options Fixed Sequence)</div>
+    <div id="quiz-wrapper"></div>
+    <div class="score-summary" id="score-box">
+        Evaluated Questions: <span id="evaluated-count">0</span>/100
+    </div>
+</div>
+
+<script>
+const quizData = [
+  {
+    id: 1,
+    type: "choice",
+    question: "1.) A programmer accidentally created an infinite loop. Which issue MOST likely caused it?",
+    options: ["Too many variables", "The condition has arithmetic operators", "Loop condition never becomes false", "Missing HTML tags"],
+    answerText: "Loop condition never becomes false"
+  },
+  {
+    id: 2,
+    type: "text",
+    question: "2.) Complete the nested function call so that it will display Inside.\n\nfunction outer(){\n  function inner(){\n  }\n  echo \"Inside\";\n}\nouter();",
+    answer: "inner();"
+  },
+  {
+    id: 3,
+    type: "choice",
+    question: "3.) Analyze the code:\nfor ($i=1; $i<=3; $i++){\n}\necho $i;\n\nWhat is the output?",
+    options: ["012", "0123", "12", "123"],
+    answerText: "123"
+  },
+  {
+    id: 4,
+    type: "choice",
+    question: "4.) What is the output?\necho \"5\"+\"5 students\";",
+    options: ["10", "55 students", "5", "Error"],
+    answerText: "10"
+  },
+  {
+    id: 5,
+    type: "choice",
+    question: "5.) A grading system must store Student Name, Subject, and Grade for hundreds of students. Which structure is MOST appropriate?",
+    options: ["Multiple arrays", "A single multi-dimensional array", "Multiple single-dimensional array", "Multiple variables"],
+    answerText: "A single multi-dimensional array"
+  },
+  {
+    id: 6,
+    type: "text",
+    question: "6.) Complete the function declaration:\n_____ greet(){\n  echo \"Hello\";\n}",
+    answer: "function"
+  },
+  {
+    id: 7,
+    type: "choice",
+    question: "7.) Which software package is MOST suitable for beginners setting up PHP locally?",
+    options: ["XAMPP", "Visual Studio Code", "Composer", "Git"],
+    answerText: "XAMPP"
+  },
+  {
+    id: 8,
+    type: "text",
+    question: "8.) Complete the function declaration.\n_____ displayMessage(){\n  echo \"Welcome\";\n}",
+    answer: "function"
+  },
+  {
+    id: 9,
+    type: "choice",
+    question: "9.) What will be the output?\n$x = 5;\nif($x > 3){\n  if($x < 10){\n    echo \"A\";\n  }else{\n    echo \"B\";\n  }\n}",
+    options: ["No output", "A", "AB", "B"],
+    answerText: "A"
+  },
+  {
+    id: 10,
+    type: "choice",
+    question: "10.) What is the problem in this code?\n1  $x = 5;\n2  \n3  function test(){\n4    echo $x;\n5  }\n6  test();",
+    options: ["Missing echo in line 6", "Undefined variable inside function", "Missing return statement", "No problem"],
+    answerText: "Undefined variable inside function"
+  },
+  {
+    id: 11,
+    type: "choice",
+    question: "11.) What will be the output?\n$x = 0;\nif($x = 1){\n  echo \"YES\";\n}else{\n  echo \"NO\";\n}",
+    options: ["NO", "YES", "Unknown", "Error"],
+    answerText: "YES"
+  },
+  {
+    id: 12,
+    type: "choice",
+    question: "12.) Given:\n$x = 5 + 3 * 2\nWhat is the value of $x?",
+    options: ["13", "16", "10", "11"],
+    answerText: "11"
+  },
+  {
+    id: 13,
+    type: "choice",
+    question: "13.) Analyze the code:\n$numbers = array(10,20,30);\necho count($numbers);\nWhat is the output?",
+    options: ["Error", "No output", "2", "3"],
+    answerText: "3"
+  },
+  {
+    id: 14,
+    type: "choice",
+    question: "14.) What is wrong with this code?\nif($x = 5){\n}\necho \"True\";",
+    options: ["No problem in the code", "Condition will always be true", "Undefined variable", "Syntax error"],
+    answerText: "Condition will always be true"
+  },
+  {
+    id: 15,
+    type: "choice",
+    question: "15.) A developer wants a webpage to automatically generate customized greetings for each user visiting the site. Which feature of PHP is MOST useful?",
+    options: ["CSS animation", "Browser caching", "Static HTML rendering", "Server-side scripting"],
+    answerText: "Server-side scripting"
+  },
+  {
+    id: 16,
+    type: "choice",
+    question: "16.) In PHP, the return datatype of a function MUST be specified when declaring an function.",
+    options: ["True", "False"],
+    answerText: "False"
+  },
+  {
+    id: 17,
+    type: "choice",
+    question: "17.) Which scenario BEST demonstrates dynamic web content?",
+    options: ["Fixed image gallery", "Offline text editor", "A printed brochure", "A webpage displaying current weather data from a database"],
+    answerText: "A webpage displaying current weather data from a database"
+  },
+  {
+    id: 18,
+    type: "choice",
+    question: "18.) PHP is embedded directly within HTML and CANNOT be placed in a separate file.",
+    options: ["True", "False"],
+    answerText: "False"
+  },
+  {
+    id: 19,
+    type: "choice",
+    question: "19.) goto helps programs to be more organized and easier to maintain in the long run.",
+    options: ["True", "False"],
+    answerText: "False"
+  },
+  {
+    id: 20,
+    type: "text",
+    question: "20.) Complete the loop so that it will execute 5 times:\nfor($i=1; _____; _____)",
+    answer: "$i<=5; $i++"
+  },
+  {
+    id: 21,
+    type: "choice",
+    question: "21.) What is the output?\n$a = \"10\";\n$b = \"2a\";\necho $a + $b;",
+    options: ["10", "Error", "12", "102a"],
+    answerText: "12"
+  },
+  {
+    id: 22,
+    type: "choice",
+    question: "22.) Which of the choices correctly reflects the output of the statement?\necho date(\"m d,Y h:i:A\");",
+    options: ["06 19, 2026 08:05:57 PM", "6 19, 2026 8:5:57 PM", "Error", "Jun 19, 2026 08:05:57 PM"],
+    answerText: "06 19, 2026 08:05:57 PM"
+  },
+  {
+    id: 23,
+    type: "text",
+    question: "23.) Complete the statement so that it will return the remainder of the two parameters.\nfunction multiply($a,$b){\n  _____\n}",
+    answer: "return $a % $b"
+  },
+  {
+    id: 24,
+    type: "choice",
+    question: "24.) Which data type is MOST appropriate for storing a student's GPA?",
+    options: ["Integer", "Boolean", "Array", "Float"],
+    answerText: "Float"
+  },
+  {
+    id: 25,
+    type: "text",
+    question: "25.) Fill in the missing operator:\n$x _____ 5;\nto increase $x by 5.",
+    answer: "+="
+  },
+  {
+    id: 26,
+    type: "choice",
+    question: "26.) Analyze the code:\n$i = 1;\nwhile($i <= 3){\n  echo $i;\n}\nWhat is the output?",
+    options: ["12", "123", "Infinite loop", "012"],
+    answerText: "Infinite loop"
+  },
+  {
+    id: 27,
+    type: "choice",
+    question: "27.) Analyze the code:\nfunction add($a,$b){\n  return $a + $b;\n}\necho add(\"5\",\"3\");\nWhat is the output?",
+    options: ["Error", "8", "53", "Unknown"],
+    answerText: "8"
+  },
+  {
+    id: 28,
+    type: "choice",
+    question: "28.) A developer accidentally declared both $Score and $score and the program did not show the output as expected. Why did the program produce unexpected results?",
+    options: ["PHP ignores capitalization", "PHP variables are case-sensitive", "Variables are automatically merged", "PHP converts all variables to lowercase"],
+    answerText: "PHP variables are case-sensitive"
+  },
+  {
+    id: 29,
+    type: "text",
+    question: "29.) Complete the statement so that it will return the remainder of the two parameters.\nfunction multiply($a,$b){\n  _____\n}",
+    answer: "return $a % $b"
+  },
+  {
+    id: 30,
+    type: "text",
+    question: "30.) Complete the logical operator:\nif($x > 0 _____ $y > 0)\nBoth conditions must be true.",
+    answer: "&&"
+  },
+  {
+    id: 31,
+    type: "choice",
+    question: "31.) A student placed a PHP file on the desktop and attempted to run it directly in the browser. The PHP code appeared as plain text. What is the BEST explanation?",
+    options: ["PHP requires JavaScript to run", "The browser does not support HTML", "PHP scripts require a web server environment and must be placed in a server-specific directory", "The file must be compressed first"],
+    answerText: "PHP scripts require a web server environment and must be placed in a server-specific directory"
+  },
+  {
+    id: 32,
+    type: "choice",
+    question: "32.) What is wrong with this code?\nfunction calc($a, $b){\n  $a + $b;\n}\necho calc(2,3);",
+    options: ["Missing echo statement inside the function", "Missing return statement", "Parameters are declared wrong", "Wrong arguments"],
+    answerText: "Missing return statement"
+  },
+  {
+    id: 33,
+    type: "text",
+    question: "33.) Complete the code so that 'Access Granted' will be displayed if both the conditions are true.\nif($username == \"admin\" _____ $password == \"1234\"){\n  echo \"Access Granted\";\n}",
+    answer: "&&"
+  },
+  {
+    id: 34,
+    type: "dropdown",
+    question: "34.) Match the term to its purpose.",
+    matches: [
+        { term: "Browser", correct: "Displays webpages" },
+        { term: "MySQL", correct: "Stores data" },
+        { term: "Apache", correct: "Host websites" }
+    ],
+    dropdownOptions: ["Displays webpages", "Stores data", "Host websites"]
+  },
+  {
+    id: 35,
+    type: "text",
+    question: "35.) Complete the function declaration.\n_____ displayMessage(){\n  echo \"Welcome\";\n}",
+    answer: "function"
+  },
+  {
+    id: 36,
+    type: "choice",
+    question: "36.) Analyze the code:\nfunction add($a,$b){\n  return \"$a\" + \"$b\";\n}\necho add(5,3);\nWhat is the output?",
+    options: ["8", "Unknown", "Error", "53"],
+    answerText: "8"
+  },
+  {
+    id: 37,
+    type: "choice",
+    question: "37.) A grading system must store Student Name, Subject, and Grade for hundreds of students. Which structure is MOST appropriate?",
+    options: ["Multiple variables", "Multiple arrays", "Multiple single-dimensional array", "A single multi-dimensional array"],
+    answerText: "A single multi-dimensional array"
+  },
+  {
+    id: 38,
+    type: "choice",
+    question: "38.) Analyze the code:\n$grades = array(\n  array(\"Ana\",90),\n  array(\"Ben\",85)\n);\necho $grades[1][0];\nWhat is displayed?",
+    options: ["Ben 90", "Ben"],
+    answerText: "Ben"
+  },
+  {
+    id: 39,
+    type: "text",
+    question: "39.) Complete the statement:\necho _____(\"hello\");\nConvert \"hello\" to uppercase.",
+    answer: "strtoupper"
+  },
+  {
+    id: 40,
+    type: "choice",
+    question: "40.) Why are variables important in programming?",
+    options: ["They replace servers", "They remove HTML", "They prevent loops", "They store reusable data values"],
+    answerText: "They store reusable data values"
+  },
+  {
+    id: 41,
+    type: "choice",
+    question: "41.) A webpage updates product prices automatically from a database every hour. Which concept is MOST related?",
+    options: ["Static rendering", "File compression", "Browser plugins", "Dynamic scripting"],
+    answerText: "Dynamic scripting"
+  },
+  {
+    id: 42,
+    type: "text",
+    question: "42.) $x = 2;\n$y = 3;\n$z = 4;\necho $x + $y * $z - $y;\nWhat is the output?",
+    answer: "11"
+  },
+  {
+    id: 43,
+    type: "text",
+    question: "43.) Complete the PHP code:\n<?php\necho \"Welcome to PHP\";\n_____",
+    answer: "?>"
+  },
+  {
+    id: 44,
+    type: "text",
+    question: "44.) Complete the loop so that it will execute 5 times:\nfor($i=1; _____; _____)",
+    answer: "$i<=5; $i++"
+  },
+  {
+    id: 45,
+    type: "choice",
+    question: "45.) Multiplication has higher precedence than addition, but lower than division.",
+    options: ["True", "False"],
+    answerText: "False"
+  },
+  {
+    id: 46,
+    type: "text",
+    question: "46.) Complete the function declaration.\n_____ displayMessage(){\n  echo \"Welcome\";\n}",
+    answer: "function"
+  },
+  {
+    id: 47,
+    type: "choice",
+    question: "47.) Which loop is MOST appropriate when the number of repetitions is known beforehand?",
+    options: ["do..while", "for", "foreach", "while"],
+    answerText: "for"
+  },
+  {
+    id: 48,
+    type: "choice",
+    question: "48.) PHP files commonly use the .php extension.",
+    options: ["True", "False"],
+    answerText: "True"
+  },
+  {
+    id: 49,
+    type: "text",
+    question: "49.) Arrange the correct flow of web architecture.\nResponse is generated in HTML form\nBrowser sends request\nServer processes PHP\nBrowser receives response\n\nType chronologically line-by-line using index digits:",
+    answer: "1. Browser sends request\n2. Server processes PHP\n3. Response is generated in HTML form\n4. Browser receives response"
+  },
+  {
+    id: 50,
+    type: "choice",
+    question: "50.) include_once() allows duplicate file inclusion.",
+    options: ["True", "False"],
+    answerText: "False"
+  },
+  {
+    id: 51,
+    type: "text",
+    question: "51.) Complete the constant declaration:\n_____(\"SITE\", \"My Website\");",
+    answer: "define"
+  },
+  {
+    id: 52,
+    type: "choice",
+    question: "52.) Why is PHP commonly paired with MySQL?",
+    options: ["PHP cannot display HTML", "MySQL compiles PHP code", "MySQL replaces Apache", "PHP is optimized for database interaction"],
+    answerText: "PHP is optimized for database interaction"
+  },
+  {
+    id: 53,
+    type: "text",
+    question: "53.) Arrange the steps in evaluating this expression:\n$x > 5 && $y < 10\n\nType chronologically line-by-line:",
+    answer: "1. Compare $x>5\n2. Compare $y<10\n3. Apply logical AND"
+  },
+  {
+    id: 54,
+    type: "choice",
+    question: "54.) What is the issue with this code?\nfor($i=1; $i>0; $i++){\n  echo $i;\n}",
+    options: ["Infinite loop", "Nothing", "Syntax error", "Undefined variable"],
+    answerText: "Infinite loop"
+  },
+  {
+    id: 55,
+    type: "choice",
+    question: "55.) A developer wants a webpage to automatically generate customized greetings for each user visiting the site. Which feature of PHP is MOST useful?",
+    options: ["Browser caching", "Server-side scripting", "Static HTML rendering", "CSS animation"],
+    answerText: "Server-side scripting"
+  },
+  {
+    id: 56,
+    type: "text",
+    question: "56.) Complete the code so that 3 will not be displayed in the output.\nfor($i=1; $i<=5; $i++){\n  if($i == 3){\n    _____\n  }\n  echo $i;\n}",
+    answer: "continue"
+  },
+  {
+    id: 57,
+    type: "text",
+    question: "57.) Complete the parameter list so that each parameter variable will have a default value of 0.\nfunction add(_____ ){\n  return $a + $b;\n}",
+    answer: "$a=0, $b=0"
+  },
+  {
+    id: 58,
+    type: "text",
+    question: "58.) Complete the alternative syntax.\nif($age >= 18):\n  echo \"Adult\";\n_____",
+    answer: "endif"
+  },
+  {
+    id: 59,
+    type: "text",
+    question: "59.) Complete the loop to print numbers from 1 to 5.\nfor($i=1; $i<=5; $i_____ ){\n  echo $i;\n}",
+    answer: "++"
+  },
+  {
+    id: 60,
+    type: "text",
+    question: "60.) Complete the command to display output.\n<?php\n_____ \"PHP\";\n?>",
+    answer: "echo"
+  },
+  {
+    id: 61,
+    type: "choice",
+    question: "61.) Type casting permanently changes the original datatype stored in all variables referencing the value.",
+    options: ["True", "False"],
+    answerText: "False"
+  },
+  {
+    id: 62,
+    type: "choice",
+    question: "62.) Analyze the code:\n$x = 5;\nif($x > 3){\n  echo \"A\";\n}else{\n  echo \"B\";\n}",
+    options: ["No output", "A", "AB", "B"],
+    answerText: "A"
+  },
+  {
+    id: 63,
+    type: "choice",
+    question: "63.) What will be the output?\n$x = 0;\nif($x = 1){\n  echo \"YES\";\n}else{\n  echo \"NO\";\n}",
+    options: ["NO", "Unknown", "Error", "YES"],
+    answerText: "YES"
+  },
+  {
+    id: 64,
+    type: "choice",
+    question: "64.) A grading system must store Student Name, Subject, and Grade for hundreds of students. Which structure is MOST appropriate?",
+    options: ["Multiple variables", "Multiple arrays", "Multiple single-dimension array", "A single multi-dimension array"],
+    answerText: "A single multi-dimension array"
+  },
+  {
+    id: 65,
+    type: "choice",
+    question: "65.) $x = 2;\n$y = 3;\n$z = 4;\necho $x + $y * $z - $y;\nWhat is the output?",
+    options: ["10", "11", "14"],
+    answerText: "11"
+  },
+  {
+    id: 66,
+    type: "choice",
+    question: "66.) Analyze the code:\nfor($i=1; $i<=5; $i++){\n  if($i == 4){\n    break;\n  }\n  echo $i;\n}",
+    options: ["1234", "123", "12345", "1235"],
+    answerText: "123"
+  },
+  {
+    id: 67,
+    type: "choice",
+    question: "67.) Which of the choices correctly reflects the output of the statement?\necho date(\"m d,Y h:i:s A\");",
+    options: ["06 19, 2026 08:05:57 PM", "Jun 19, 2026 08:05:57 PM", "Error", "6 19, 2026 8:5:57 PM"],
+    answerText: "06 19, 2026 08:05:57 PM"
+  },
+  {
+    id: 68,
+    type: "choice",
+    question: "68.) What is the PRIMARY advantage of functions?",
+    options: ["Replace loops", "improves code readability", "Eliminate variables", "Encourage code reuse"],
+    answerText: "Encourage code reuse"
+  },
+  {
+    id: 69,
+    type: "choice",
+    question: "69.) Analyze the code:\n$grades = array(\n  array(\"Ana\",90),\n  array(\"Ben\",85)\n);\necho $grades[1][0];\nWhat displayed?",
+    options: ["90", "Ben", "Ben 90", "Ana"],
+    answerText: "Ben"
+  },
+  {
+    id: 70,
+    type: "choice",
+    question: "70.) What is wrong with this code?\nif($x = 5){\n  echo \"True\";\n}",
+    options: ["No problem in the code", "Undefined variable", "Syntax error", "Condition will always be true"],
+    answerText: "Condition will always be true"
+  },
+  {
+    id: 71,
+    type: "choice",
+    question: "71.) What will be displayed?\n$x = 2;\nswitch($x){\n  case 1:\n  case 2:\n    echo \"A\";\n    echo \"B\";\n  case 3:\n    echo \"C\";\n}",
+    options: ["ABC", "B", "Error", "BC"],
+    answerText: "BC"
+  },
+  {
+    id: 72,
+    type: "dropdown",
+    question: "72.) Match the function with its description.",
+    matches: [
+        { term: "asort()", correct: "Sort values ascending, retains the index of the values." },
+        { term: "rsort()", correct: "Sort values descending, gives new index to values." },
+        { term: "sort()", correct: "Sort values ascending, gives new index to values." }
+    ],
+    dropdownOptions: [
+        "Sort values ascending, gives new index to values.",
+        "Sort values ascending, retains the index of the values.",
+        "Sort values descending, gives new index to values."
+    ]
+  },
+  {
+    id: 73,
+    type: "choice",
+    question: "73.) Analyze the code:\nfunction display(){\n  echo \"PHP\";\n}\necho display();\nWhich statement BEST explains the result?",
+    options: ["Function is invalid", "Function returns \"PHP\"", "Error because echo cannot call functions", "Function displays \"PHP\" but returns NULL"],
+    answerText: "Function displays \"PHP\" but returns NULL"
+  },
+  {
+    id: 74,
+    type: "choice",
+    question: "74.) PHP can process form submissions.",
+    options: ["True", "False"],
+    answerText: "True"
+  },
+  {
+    id: 75,
+    type: "choice",
+    question: "75.) include_once() allows duplicate file inclusion.",
+    options: ["True", "False"],
+    answerText: "False"
+  },
+  {
+    id: 76,
+    type: "text",
+    question: "76.) Fill the blank with the correct casting operator to convert the string into an integer.\n$age = \"20\";\n$age = _____ $age;",
+    answer: "(int)"
+  },
+  {
+    id: 77,
+    type: "choice",
+    question: "77.) Analyze the code:\n$x = 5;\n$y = 10;\nif($x > 0 || $y < 0){\n  echo \"Valid\";\n}else{\n  echo \"Invalid\";\n}\nWhat is the output?",
+    options: ["Valid", "Error", "Invalid", "No output"],
+    answerText: "Valid"
+  },
+  {
+    id: 78,
+    type: "choice",
+    question: "78.) A developer needs to store multiple student names under one variable. Which datatype is MOST suitable?",
+    options: ["Float", "Boolean", "Integer", "Array"],
+    answerText: "Array"
+  },
+  {
+    id: 79,
+    type: "choice",
+    question: "79.) PHP files commonly use the .php extension.",
+    options: ["True", "False"],
+    answerText: "True"
+  },
+  {
+    id: 80,
+    type: "choice",
+    question: "80.) Multi-dimensional arrays can represent tabular data.",
+    options: ["True", "False"],
+    answerText: "True"
+  },
+  {
+    id: 81,
+    type: "choice",
+    question: "81.) Which data type is MOST appropriate for storing a student's GPA?",
+    options: ["Float", "Integer", "Boolean", "Array"],
+    answerText: "Float"
+  },
+  {
+    id: 82,
+    type: "text",
+    question: "82.) Complete the code so that 'Access Granted' will be displayed if both the conditions are true.\nif($username == \"admin\" _____ $password == \"1234\"){\n  echo \"Access Granted\";\n}",
+    answer: "&&"
+  },
+  {
+    id: 83,
+    type: "text",
+    question: "83.) Fill the blank with the correct casting operator to convert the string into an integer.\n$age = \"20\";\n$age = _____ $age;",
+    answer: "(int)"
+  },
+  {
+    id: 84,
+    type: "choice",
+    question: "84.) Which statement BEST describes a do-while loop?",
+    options: ["Used only for arrays", "Checks condition first", "Never repeats", "Executes at least once"],
+    answerText: "Executes at least once"
+  },
+  {
+    id: 85,
+    type: "choice",
+    question: "85.) Which statement BEST describes a do-while loop?",
+    options: ["Used only for arrays", "Checks condition first", "Never repeats", "Executes at least once"],
+    answerText: "Executes at least once"
+  },
+  {
+    id: 86,
+    type: "text",
+    question: "86.) Complete the code so $x is accessible inside the function.\n$x = 20;\nfunction show(){\n  _____ $x;\n  echo $x;\n}",
+    answer: "global"
+  },
+  {
+    id: 87,
+    type: "dropdown",
+    question: "87.) Match the structure with its use.",
+    matches: [
+        { term: "switch", correct: "Multi-selection" },
+        { term: "if", correct: "Decision making" },
+        { term: "for", correct: "Repetition" }
+    ],
+    dropdownOptions: ["Multi-selection", "Decision making", "Repetition"]
+  },
+  {
+    id: 88,
+    type: "choice",
+    question: "88.) Why are arrays useful in web applications?",
+    options: ["They allow grouped data management", "They avoid using variables", "They replace HTML", "They avoid the usage of loops"],
+    answerText: "They allow grouped data management"
+  },
+  {
+    id: 89,
+    type: "choice",
+    question: "89.) Why are predefined functions important?",
+    options: ["They simplify HTML", "They simplify common programming tasks", "They replace PHP syntax", "They eliminate servers"],
+    answerText: "They simplify common programming tasks"
+  },
+  {
+    id: 90,
+    type: "choice",
+    question: "90.) What is the output?\necho \"5\" + \"5 students\";",
+    options: ["10", "55 students", "5", "Error"],
+    answerText: "10"
+  },
+  {
+    id: 91,
+    type: "choice",
+    question: "91.) Which mathematical function calculates square root?",
+    options: ["Sqr()", "sqrt()", "sqr()", "Sqrt()"],
+    answerText: "sqrt()"
+  },
+  {
+    id: 92,
+    type: "choice",
+    question: "92.) $x = 2;\n$y = 3;\n$z = 4;\necho $x + $y * $z - $y;\nWhat is the output?",
+    options: ["14", "11", "10", "8"],
+    answerText: "11"
+  },
+  {
+    id: 93,
+    type: "choice",
+    question: "93.) Analyze the code:\n$numbers = array(\n  1 => 30,\n  2 => 10,\n  0 => 20\n);\nksort($numbers);\necho $numbers[0];\nWhat is the output?",
+    options: ["10", "20", "Error"],
+    answerText: "20"
+  },
+  {
+    id: 94,
+    type: "choice",
+    question: "94.) Which statement skips the current iteration and continues the loop?",
+    options: ["exit", "break", "return", "continue"],
+    answerText: "continue"
+  },
+  {
+    id: 95,
+    type: "choice",
+    question: "95.) Analyze the code:\nfunction greet($name = \"Juan\"){\n  echo \"Hello, $name\";\n}\n$name = \"Jose\";\ngreet();\nWhat is displayed?",
+    options: ["Error", "Hello, Juan", "Hello,", "Hello, Jose"],
+    answerText: "Hello, Juan"
+  },
+  {
+    id: 96,
+    type: "choice",
+    question: "96.) A PHP script generates different outputs based on the current date. What characteristic does this demonstrate?",
+    options: ["Dynamic con", "Browser rendering", "Static processing", "Offline compilation"],
+    answerText: "Dynamic con"
+  },
+  {
+    id: 97,
+    type: "text",
+    question: "97.) Complete the loop to print numbers from 1 to 5.\nfor($i=1; $i<=5; $i_____ ){\n  echo $i;\n}",
+    answer: "++"
+  },
+  {
+    id: 98,
+    type: "choice",
+    question: "98.) What will happen when this code runs?\n$x = 10;\nfunction demo(){\n  global $x;\n  echo $x;\n}\ndemo();",
+    options: ["Unknown", "It will display Null", "Error", "It will display 10"],
+    answerText: "It will display 10"
+  },
+  {
+    id: 99,
+    type: "choice",
+    question: "99.) What is the PRIMARY advantage of functions?",
+    options: ["Replace loops", "Eliminate variables", "improves code readability", "Encourage code reuse"],
+    answerText: "Encourage code reuse"
+  },
+  {
+    id: 100,
+    type: "choice",
+    question: "100.) PHP is embedded directly within HTML and CANNOT be placed in a separate file.",
+    options: ["True", "False"],
+    answerText: "False"
+  }
+];
+
+function shuffleArray(array) {
+    const arr = [...array];
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+}
+
+const evaluatedQuestions = new Set();
+
+function renderQuiz() {
+    const wrapper = document.getElementById('quiz-wrapper');
+    wrapper.innerHTML = ""; 
+    
+    // Shuffle the full test layout
+    const randomizedQuestions = shuffleArray(quizData);
+
+    randomizedQuestions.forEach((q) => {
+        const masterIndex = quizData.findIndex(item => item.id === q.id);
+
+        const card = document.createElement('div');
+        card.className = 'question-card';
+        card.id = `qcard-${masterIndex}`;
+
+        const qText = document.createElement('div');
+        qText.className = 'question-text';
+        qText.innerText = q.question;
+        card.appendChild(qText);
+
+        if (q.type === 'choice') {
+            const optionsContainer = document.createElement('div');
+            optionsContainer.className = 'options-container';
+            
+            // Loop through options sequentially in their fixed sequence
+            q.options.forEach(opt => {
+                const label = document.createElement('label');
+                label.className = 'option-label';
+                
+                const radio = document.createElement('input');
+                radio.type = 'radio';
+                radio.name = `q-${masterIndex}`;
+                radio.value = opt;
+                
+                label.appendChild(radio);
+                label.appendChild(document.createTextNode(opt));
+                optionsContainer.appendChild(label);
+            });
+            card.appendChild(optionsContainer);
+            
+        } else if (q.type === 'text') {
+            const inputContainer = document.createElement('div');
+            inputContainer.className = 'text-input-container';
+            
+            const textInput = document.createElement('input');
+            textInput.type = 'text';
+            textInput.className = 'text-answer-field';
+            textInput.id = `input-${masterIndex}`;
+            textInput.placeholder = "Type your answer here...";
+            
+            inputContainer.appendChild(textInput);
+            card.appendChild(inputContainer);
+            
+        } else if (q.type === 'dropdown') {
+            const dropdownContainer = document.createElement('div');
+            dropdownContainer.className = 'dropdown-matching-container';
+            
+            q.matches.forEach((matchItem, matchIdx) => {
+                const row = document.createElement('div');
+                row.className = 'dropdown-row';
+                
+                const label = document.createElement('div');
+                label.className = 'dropdown-label';
+                label.innerText = `${matchItem.term} — `;
+                
+                const select = document.createElement('select');
+                select.className = 'quiz-select';
+                select.id = `select-${masterIndex}-${matchIdx}`;
+                
+                const defaultOpt = document.createElement('option');
+                defaultOpt.value = "";
+                defaultOpt.innerText = "-- Choose Match --";
+                select.appendChild(defaultOpt);
+                
+                q.dropdownOptions.forEach(optVal => {
+                    const option = document.createElement('option');
+                    option.value = optVal;
+                    option.innerText = optVal;
+                    select.appendChild(option);
+                });
+                
+                row.appendChild(label);
+                row.appendChild(select);
+                dropdownContainer.appendChild(row);
+            });
+            card.appendChild(dropdownContainer);
+        }
+
+        const checkBtn = document.createElement('button');
+        checkBtn.className = 'check-btn';
+        checkBtn.innerText = 'Check Answer';
+        checkBtn.onclick = () => verifyAnswer(masterIndex, q);
+        card.appendChild(checkBtn);
+
+        const feedback = document.createElement('div');
+        feedback.className = 'feedback';
+        feedback.id = `feedback-${masterIndex}`;
+        card.appendChild(feedback);
+
+        wrapper.appendChild(card);
+    });
+}
+
+function verifyAnswer(index, questionObj) {
+    const feedback = document.getElementById(`feedback-${index}`);
+    let isCorrect = false;
+    let feedbackText = "";
+
+    if (questionObj.type === 'choice') {
+        const selected = document.querySelector(`input[name="q-${index}"]:checked`);
+        if (!selected) {
+            alert("Please select an option first!");
+            return;
+        }
+        isCorrect = (selected.value === questionObj.answerText);
+        feedbackText = isCorrect ? "Correct! Perfect response." : `Incorrect. Correct Answer: ${questionObj.answerText}`;
+        
+    } else if (questionObj.type === 'text') {
+        const inputField = document.getElementById(`input-${index}`);
+        const userAnswer = inputField.value.trim();
+        if (userAnswer === "") {
+            alert("Please type an answer first!");
+            return;
+        }
+        isCorrect = (userAnswer.replace(/\s+/g, '') === questionObj.answer.trim().replace(/\s+/g, ''));
+        feedbackText = isCorrect ? "Correct! Perfect response." : `Incorrect. Correct Answer: ${questionObj.answer}`;
+        
+    } else if (questionObj.type === 'dropdown') {
+        let allAnswered = true;
+        let incorrectMatches = [];
+        let answersSheet = [];
+
+        questionObj.matches.forEach((matchItem, matchIdx) => {
+            const selectEl = document.getElementById(`select-${index}-${matchIdx}`);
+            if (selectEl.value === "") {
+                allAnswered = false;
+            }
+            const correctCheck = (selectEl.value === matchItem.correct);
+            answersSheet.push(`${matchItem.term} -> ${matchItem.correct}`);
+            if (!correctCheck) {
+                incorrectMatches.push(matchItem.term);
+            }
+        });
+
+        if (!allAnswered) {
+            alert("Please select an option for all items in this matching question!");
+            return;
+        }
+
+        isCorrect = (incorrectMatches.length === 0);
+        feedbackText = isCorrect ? "Correct! All pairs matched perfectly." : `Incorrect matching definition layout.\nCorrect Configuration:\n• ${answersSheet.join('\n• ')}`;
+    }
+
+    feedback.style.display = 'block';
+    if (isCorrect) {
+        feedback.className = 'feedback correct';
+    } else {
+        feedback.className = 'feedback incorrect';
+    }
+    feedback.innerText = feedbackText;
+
+    evaluatedQuestions.add(index);
+    document.getElementById('evaluated-count').innerText = evaluatedQuestions.size;
+}
+
+window.onload = renderQuiz;
+</script>
+
+</body>
+</html>
